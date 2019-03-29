@@ -40,6 +40,8 @@
 #include <QTableWidget>
 #include <QCheckBox>
 
+#include "LCC_demo_plugin_interface.h"
+
 class QWidget;
 
 class DialogMesh : public QDialog, public Ui::createMesh
@@ -191,12 +193,11 @@ public Q_SLOTS:
 
 Q_SIGNALS:
   void sceneChanged();
-  
+
 protected:
   void clear_all();
   void on_new_volume(Dart_handle adart);
   void on_delete_volume(Dart_handle adart);
-  void init_all_new_volumes();
   void mark_all_filled_and_visible_volumes(LCC::size_type amark);
 
   Dart_handle make_iso_cuboid(const Point_3 basepoint, LCC::FT lg);
@@ -239,6 +240,20 @@ protected:
   void sierpinski_triangle_split_face_in_four(Dart_handle dh,
                                               bool removecenter);
 
+  /*! For each objects in the Geometric Objects view, loads the associated plugins.
+   * Gets the property "submenuName" of all the actions and creates submenus.
+   * Sorts the Operations menu by name.
+   * @see initPlugin(QObject*);
+   * @see initIOPlugin(QObject*);
+   */
+  void loadPlugins();
+  /*!
+   * \brief Initializes the plugins.
+   * Makes pairs between plugins and object names and fills the Operations menu.
+   * Called only once.
+   */
+  bool initPlugin(QObject*);
+
   Scene scene;
 
   unsigned int nbcube;
@@ -256,13 +271,8 @@ protected:
   std::size_t nbfacesinit;
   bool sierpinskiCarpetUpdateAttributes;
   bool computeGeometry;
-  /*bool neverUpdateAttributes;
-  bool duringConstructionUpdateAttributes;
-  bool afterConstructionUpdateAttributes;
-  bool updateAttributesMethodStdMap;
-  bool updateAttributesMethodTraversal;
-  bool isComputableGeometry;*/
   std::vector<Dart_handle> sierpinskiCarpetSurfaces;
+
   // utilisés seulement lorsque pas de mise à jour d'attributs
   std::map<Dart_handle, LCC::Point> dart_map;
   std::vector<Dart_handle> new_darts;
@@ -274,6 +284,17 @@ protected:
 
   QDockWidget* volumeListDock;
   QTableWidget* volumeList;
+
+private:
+  void updateMenus();
+  void setMenus(const QString&, const QString&, QAction *a);
+  bool load_plugin(const QString& names, bool blacklisted = false);
+  // typedef to make Q_FOREACH work
+  typedef QPair<CGAL::LCC_demo_plugin_interface*, QString> PluginNamePair;
+  QVector<PluginNamePair> plugins;
+  QMap<QString, QMenu*> menu_map;
+  QMap<QString, std::vector<QString> > PathNames_map; //For each non-empty plugin directory, contains a vector of plugin names
+  QMap<QString, QString > pluginsStatus_map; //For each non-empty plugin directory, contains a vector of plugin names
 };
 
 #endif

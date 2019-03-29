@@ -94,11 +94,21 @@
     <addaction name="actionExtend_filled_volumes"/>
     <addaction name="actionExtend_hidden_volumes"/>
     <addaction name="separator"/>
+    <addaction name="actionRefresh_Scene"/>
+   </widget>
+   <widget class="QMenu" name="menuPlugins">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="title">
+     <string>Plugins</string>
+    </property>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuCreations"/>
    <addaction name="menuOperations"/>
    <addaction name="menuView"/>
+   <addaction name="menuPlugins"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionImportOFF">

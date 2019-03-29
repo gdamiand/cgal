@@ -55,11 +55,23 @@ qt5_wrap_ui(uis MainWindow.ui CreateMesh.ui CreateMenger.ui
 # qrc files (resources files, that contain icons, at least)
 qt5_add_resources (CGAL_Qt5_RESOURCE_FILES ./Linear_cell_complex_3.qrc)
 
+# Including all headers found in the project
+file(GLOB_RECURSE headers *.h)
+
+file(GLOB DEMO_PLUGINS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/Plugins/" 
+                                "${CMAKE_CURRENT_SOURCE_DIR}/Plugins/*")
+foreach(SUB_DIR ${DEMO_PLUGINS})
+  IF(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Plugins/${SUB_DIR}")
+     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Plugins/${SUB_DIR}")
+   endif()
+endforeach()
+
 add_executable(Linear_cell_complex_3_demo
   Linear_cell_complex_3_demo.cpp MainWindow.cpp
   Viewer.cpp Linear_cell_complex_3_subdivision.cpp
   Linear_cell_complex_pqq_subdivision.cpp
   typedefs.h import_moka.h
+  ${headers} ${plugins_src}
   ${uis} ${CGAL_Qt5_RESOURCE_FILES} ${CGAL_Qt5_MOC_FILES})
 
 add_to_cached_list(CGAL_EXECUTABLE_TARGETS Linear_cell_complex_3_demo)

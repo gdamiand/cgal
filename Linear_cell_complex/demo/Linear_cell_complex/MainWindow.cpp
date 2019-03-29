@@ -29,7 +29,8 @@
 #include <CGAL/Timer.h>
 #include <CGAL/ipower.h>
 #include "import_moka.h"
-
+#include <QLibrary>
+#include <QPluginLoader>
 
 // Function defined in Linear_cell_complex_3_subivision.cpp
 void subdivide_lcc_3 (LCC & m);
@@ -93,6 +94,9 @@ MainWindow::MainWindow (QWidget * parent) : CGAL::Qt::DemosMainWindow (parent),
        " Volume: 0 (Vol color: 0),  Connected components: 0");
   statusBar ()->addWidget (statusMessage);
 
+  menu_map[menuPlugins->title()] = menuPlugins;
+  // Load plugins, and re-enable actions that need it.
+  loadPlugins();
 }
 
 void MainWindow::connect_actions ()
@@ -162,9 +166,11 @@ void MainWindow::update_operations_entries(bool show)
   menuOperations->setEnabled(show);
 }
 
-void MainWindow::onSceneChanged ()
+void MainWindow::onSceneChanged()
 {
   QApplication::setOverrideCursor( Qt::WaitCursor );
+
+  recreate_whole_volume_list();
 
   LCC::size_type mark = scene.lcc->get_new_mark ();
   scene.lcc->negate_mark (mark);
@@ -214,15 +220,6 @@ void MainWindow::on_new_volume(Dart_handle adart)
   CGAL_assertion( scene.lcc->attribute<3>(adart)==LCC::null_handle);
   scene.lcc->set_attribute<3>(adart, scene.lcc->create_attribute<3>());
   update_volume_list_add(scene.lcc->attribute<3>(adart));
-}
-
-void MainWindow::init_all_new_volumes()
-{
-  for (LCC::One_dart_per_cell_range<3>::iterator
-       it(scene.lcc->one_dart_per_cell<3>().begin());
-       it.cont(); ++it)
-    if ( scene.lcc->attribute<3>(it)==LCC::null_handle )
-    { on_new_volume(it); }
 }
 
 void MainWindow::on_actionSave_triggered ()
@@ -332,9 +329,6 @@ void MainWindow::load(const QString & fileName, bool clear)
            <<timer.time()<<" seconds."<<std::endl;
 #endif
 
-  init_all_new_volumes();
-  recreate_whole_volume_list();
-
   this->addToRecentFiles(fileName);
   QApplication::restoreOverrideCursor ();
 
@@ -392,8 +386,6 @@ void MainWindow::load_off (const QString & fileName, bool clear)
            <<timer.time()<<" seconds."<<std::endl;
 #endif
 
-  init_all_new_volumes();
-
   this->addToRecentFiles (fileName);
   QApplication::restoreOverrideCursor ();
 
@@ -434,8 +426,6 @@ void MainWindow::load_3DTDS (const QString & fileName, bool clear)
            <<std::endl;
 #endif
 
-  init_all_new_volumes();
-
   QApplication::restoreOverrideCursor ();
   Q_EMIT (sceneChanged ());
 }
@@ -458,9 +448,6 @@ void MainWindow::load_moka(const QString & fileName, bool clear)
   std::cout<<"Time to load moka "<<qPrintable(fileName)<<": "
            <<timer.time()<<" seconds."<<std::endl;
 #endif
-
-  init_all_new_volumes();
-  recreate_whole_volume_list();
 
   this->addToRecentFiles (fileName);
   QApplication::restoreOverrideCursor ();
@@ -745,7 +732,6 @@ void MainWindow::on_actionCompute_Voronoi_3D_triggered ()
            <<timer.time()<<" seconds."<<std::endl;
 #endif
 
-  init_all_new_volumes();
   QApplication::restoreOverrideCursor ();
   Q_EMIT (sceneChanged ());
   statusBar ()->showMessage (QString ("Voronoi 3D of points in ") + fileName,
@@ -782,7 +768,6 @@ void MainWindow::on_actionDual_3_triggered ()
   delete scene.lcc;
   scene.lcc = duallcc;
   this->viewer->setScene(&scene);
-  init_all_new_volumes();
 
   statusBar ()->showMessage (QString ("Dual_3 computed"), DELAY_STATUSMSG);
   QApplication::restoreOverrideCursor ();
@@ -800,7 +785,6 @@ void MainWindow::on_actionClose_volume_triggered()
 
   if ( scene.lcc->close<3>() > 0 )
   {
-    init_all_new_volumes();
     statusBar ()->showMessage (QString ("All volume(s) closed"),
                                DELAY_STATUSMSG);
     Q_EMIT (sceneChanged ());
@@ -960,7 +944,6 @@ void MainWindow::on_actionRemove_filled_volumes_triggered()
            <<timer.time()<<" seconds."<<std::endl;
 #endif
 
-  recreate_whole_volume_list();
   QApplication::restoreOverrideCursor ();
   Q_EMIT( sceneChanged());
 
@@ -1090,8 +1073,6 @@ void MainWindow::on_actionMerge_coplanar_faces_triggered()
            <<timer.time()<<" seconds."<<std::endl;
 #endif
 
-  recreate_whole_volume_list();
-
   QApplication::restoreOverrideCursor ();
   Q_EMIT (sceneChanged ());
   statusBar()->showMessage
@@ -1134,8 +1115,6 @@ void MainWindow::on_actionMerge_all_volumes_triggered()
   std::cout<<"Time to merge all filled volumes: "
            <<timer.time()<<" seconds."<<std::endl;
 #endif
-
-  recreate_whole_volume_list();
 
   QApplication::restoreOverrideCursor ();
   Q_EMIT (sceneChanged ());
@@ -1354,8 +1333,6 @@ void MainWindow::on_actionTriangulate_all_facets_triggered()
            <<timer.time()<<" seconds."<<std::endl;
 #endif
 
-  recreate_whole_volume_list();
-
   QApplication::restoreOverrideCursor ();
   Q_EMIT (sceneChanged ());
   statusBar()->showMessage
@@ -1468,10 +1445,19 @@ void MainWindow::recreate_whole_volume_list()
   volumeList->clearContents();
   volumeList->setRowCount(0);
 
+   for (LCC::Dart_range::iterator it(scene.lcc->darts().begin());
+       it!=scene.lcc->darts().end(); ++it)
+   {
+     if ( scene.lcc->attribute<3>(it)==LCC::null_handle )
+     { on_new_volume(it); }
+   }
+   
   for (LCC::Attribute_range<3>::type::iterator
        it=scene.lcc->attributes<3>().begin(),
        itend=scene.lcc->attributes<3>().end(); it!=itend; ++it)
+  {
     update_volume_list_add(it);
+  }
 }
 
 void MainWindow::onCellChanged(int row, int col)
@@ -1714,7 +1700,6 @@ void MainWindow::onMengerCancel()
     scene.lcc->remove_cell<3>(*it);
   }
 
-  recreate_whole_volume_list();
   mengerVolumes.clear();
   update_operations_entries(true);
   statusBar()->showMessage (QString ("Menger sponge creation canceled"),
@@ -2283,8 +2268,6 @@ void MainWindow::onMengerDec()
         <<timer.time()<<" seconds."<<std::endl;
 #endif
 
-  recreate_whole_volume_list();
-
   statusBar()->showMessage(QString ("Menger sponge creation %1 -> %2").
                            arg(this->mengerLevel+1).arg(this->mengerLevel),
                            DELAY_STATUSMSG);
@@ -2354,7 +2337,6 @@ void MainWindow::onSierpinskiCarpetCancel()
     scene.lcc->remove_cell<2>(*it);
   }
 
-  recreate_whole_volume_list();
   sierpinskiCarpetSurfaces.clear();
   update_operations_entries(true);
   QApplication::restoreOverrideCursor ();
@@ -3032,7 +3014,6 @@ void MainWindow::onSierpinskiCarpetDec()
        <<timer.time()<<" seconds."<<std::endl;
 #endif
 
-  recreate_whole_volume_list();
   QApplication::restoreOverrideCursor ();
 
   statusBar()->showMessage(QString ("Sierpinski carpet creation %1 -> %2").
@@ -3091,7 +3072,6 @@ void MainWindow::onSierpinskiTriangleCancel()
     scene.lcc->remove_cell<2>(*it);
   }
 
-  recreate_whole_volume_list();
   sierpinskiTriangleSurfaces.clear();
   update_operations_entries(true);
   Q_EMIT( sceneChanged());
@@ -3408,14 +3388,218 @@ void MainWindow::onSierpinskiTriangleDec()
        <<timer.time()<<" seconds."<<std::endl;
 #endif
 
-  recreate_whole_volume_list();
   statusBar()->showMessage(QString ("Sierpinski triangle creation %1 -> %2").
                            arg(this->sierpinskiTriangleLevel+1).
                            arg(this->sierpinskiTriangleLevel),
                            DELAY_STATUSMSG);
   QApplication::restoreOverrideCursor ();
 
-  Q_EMIT( sceneChanged());
+  Q_EMIT(sceneChanged());
 }
+
+//Recursively creates all subMenus containing an action.
+// In the current implementation, there is a bug if a menu
+// and a submenu have the same name (cf map menu_map).
+void MainWindow::setMenus(const QString& name, const QString& parentName, QAction* a )
+{
+  QString menuName, subMenuName;
+  if (name.isNull())
+    return;
+  int slash_index = name.indexOf('/');
+
+  if(slash_index==-1)
+    menuName= name; // no extra sub-menu
+  else
+  {
+    int l = name.length();
+    menuName=name.mid(0,slash_index);
+    subMenuName=name.mid(slash_index+1,l-slash_index-1);
+    // recursively create sub-menus
+    setMenus(subMenuName, menuName, a);
+  }
+
+  //Create the menu if it does not already exist
+  if(!menu_map.contains(menuName))
+    menu_map[menuName] = new QMenu(menuName, this);
+
+  //Create the parent menu if it does not already exist
+  if(!menu_map.contains(parentName))
+    menu_map[parentName] = new QMenu(parentName, this);
+  // add the submenu in the menu
+  menu_map[parentName]->addMenu(menu_map[menuName]);
+
+  // only add the action in the last submenu
+  if(slash_index==-1)
+  {
+    menuPlugins->removeAction(a);
+    menu_map[menuName]->addAction(a);
+  }
+}
+
+bool MainWindow::load_plugin(const QString& fileName, bool blacklisted)
+{
+  if(fileName.contains("plugin") && QLibrary::isLibrary(fileName)) {
+    //set plugin name
+    QFileInfo fileinfo(fileName);
+    //set plugin name
+    QString name = fileinfo.fileName();
+    name.remove(QRegExp("^lib"));
+    name.remove(QRegExp("\\..*"));
+    QDebug qdebug = qDebug();
+    qdebug << "### Loading \"" << fileName.toUtf8().data() << "\"... ";
+    QPluginLoader loader;
+    QString abspath = fileinfo.absoluteFilePath();
+    loader.setFileName(fileinfo.absoluteFilePath());
+    QObject *obj = loader.instance();
+    if(obj) {
+      obj->setObjectName(name);
+      bool init1 = initPlugin(obj);
+      if (!init1)
+      {
+        pluginsStatus_map[name] = QString("Not for this program.");
+      }
+      else
+        pluginsStatus_map[name] = QString("success");
+    }
+    else {
+      pluginsStatus_map[name] = loader.errorString();
+    }
+    PathNames_map[fileinfo.absoluteDir().absolutePath()].push_back(name);
+    return true;
+  }
+  return false;
+}
+
+void MainWindow::loadPlugins()
+{
+  Q_FOREACH(QObject *obj, QPluginLoader::staticInstances())
+  {
+    initPlugin(obj);
+  }
+  
+  QList<QDir> plugins_directories;
+  QString dirPath = qApp->applicationDirPath();
+  plugins_directories<<dirPath;
+  QDir msvc_dir(dirPath);
+  QString build_dir_name = msvc_dir.dirName();//Debug or Release for msvc
+  msvc_dir.cdUp();
+  
+  QFileInfoList filist = QDir(dirPath).entryInfoList();
+  filist << msvc_dir.entryInfoList();
+  
+  Q_FOREACH(QFileInfo fileinfo, filist)
+  {
+    QString bn = fileinfo.baseName();
+    //checks if the path leads to a directory
+    if(fileinfo.baseName().contains("Plugins"))
+    {
+      QString plugins_dir = fileinfo.absolutePath();
+      plugins_dir.append("/").append(fileinfo.baseName());
+      
+      Q_FOREACH(QString package_dir,
+                QDir(plugins_dir).entryList(QDir::Dirs))
+      {
+        QString package_dir_path(plugins_dir);
+        package_dir_path.append("/").append(package_dir);
+        
+        QString libdir_path(package_dir_path);
+        libdir_path.append("/").append(build_dir_name);
+        
+        if (QDir(libdir_path).exists())
+          plugins_directories << QDir(libdir_path);
+        else
+          plugins_directories << QDir(package_dir_path);
+      }
+    }
+  }
+  QString env_path = "Plugins";
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+  QChar separator = QDir::listSeparator();
+#else
+#if defined(_WIN32)
+  QChar separator = ';';
+#else
+  QChar separator = ':';
+#endif
+#endif
+  if(!env_path.isEmpty()) {
+#if defined(_WIN32)
+    QString path = qgetenv("PATH");
+    QByteArray new_path = path.append(env_path.prepend(separator)).toUtf8();
+    qputenv("PATH", new_path);
+#endif
+    Q_FOREACH (QString pluginsDir,
+               env_path.split(separator, QString::SkipEmptyParts)) {
+      QDir dir(pluginsDir);
+      if(dir.isReadable())
+        plugins_directories << dir;
+    }
+  }
+
+  QSet<QString> loaded;
+  Q_FOREACH (QDir pluginsDir, plugins_directories) {
+    qDebug("# Looking for plugins in directory \"%s\"...",
+           qPrintable(pluginsDir.absolutePath()));
+    Q_FOREACH(QString fileName, pluginsDir.entryList(QDir::Files))
+    {
+      QString abs_name = pluginsDir.absoluteFilePath(fileName);
+      if(loaded.find(abs_name) == loaded.end())
+      {
+        if(load_plugin(abs_name, true))
+        {
+          loaded.insert(abs_name);
+        }
+      }
+    }
+  }
+  updateMenus();
+}
+
+//Creates sub-Menus for operations.
+void MainWindow::updateMenus()
+{
+  if (!menuPlugins->isEnabled())
+    menuPlugins->setEnabled(true);
+  
+  QList<QAction*> as = menuPlugins->actions();
+  Q_FOREACH(QAction* a, as)
+  {
+    QString menuPath = a->property("subMenuName").toString();
+    setMenus(menuPath, menuPlugins->title(), a);
+  }
+}
+
+bool MainWindow::initPlugin(QObject* obj)
+{
+    QObjectList childs = this->children();
+    CGAL::LCC_demo_plugin_interface* plugin =
+            qobject_cast<CGAL::LCC_demo_plugin_interface*>(obj);
+    if(plugin) {
+        // Call plugin's init() method
+        obj->setParent(this);
+        plugin->init(this, &this->scene);
+        plugins << qMakePair(plugin, obj->objectName());
+#ifdef QT_SCRIPT_LIB
+        QScriptValue objectValue =
+                script_engine->newQObject(obj);
+        script_engine->globalObject().setProperty(obj->objectName(), objectValue);
+        evaluate_script_quiet(QString("plugins.push(%1);").arg(obj->objectName()));
+#endif
+
+        Q_FOREACH(QAction* action, plugin->actions()) {
+            // If action does not belong to the menus, add it to "Operations" menu
+            if(!childs.contains(action)) {
+                menuPlugins->addAction(action);
+            }
+            // Show and enable menu item
+            addAction(action);
+        }
+        return true;
+    }
+    else
+        return false;
+}
+
+// ======================================== //
 
 #undef DELAY_STATUSMSG
