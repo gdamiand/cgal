@@ -1442,6 +1442,7 @@ void MainWindow::update_volume_list_all_ckeckstates()
 
 void MainWindow::recreate_whole_volume_list()
 {
+ volumeList->disconnect(this);
   volumeList->clearContents();
   volumeList->setRowCount(0);
 
@@ -1458,6 +1459,7 @@ void MainWindow::recreate_whole_volume_list()
   {
     update_volume_list_add(it);
   }
+  connectVolumeListHandlers();
 }
 
 void MainWindow::onCellChanged(int row, int col)
@@ -1821,7 +1823,7 @@ void MainWindow::onMengerInc()
                        myrandom.get_int(0,256),
                        myrandom.get_int(0,256)));
 
-        update_volume_list_add(scene.lcc->attribute<3>(mengerVolumes[i]));
+      //update_volume_list_add(scene.lcc->attribute<3>(mengerVolumes[i]));
     }
 
     scene.lcc->set_update_attributes(true);
@@ -1927,7 +1929,7 @@ void MainWindow::split_vol_in_three(Dart_handle dh, bool removecenter)
                    myrandom.get_int(0,256),
                    myrandom.get_int(0,256)));
 
-    update_volume_list_add(scene.lcc->attribute<3>(dh));
+    // update_volume_list_add(scene.lcc->attribute<3>(dh));
   }
 
   if ( removecenter )
@@ -1936,8 +1938,8 @@ void MainWindow::split_vol_in_three(Dart_handle dh, bool removecenter)
   {
     mengerVolumes.push_back(f1);
 
-    if (scene.lcc->are_attributes_automatically_managed())
-      update_volume_list_add(scene.lcc->attribute<3>(f1));
+    /* if (scene.lcc->are_attributes_automatically_managed())
+       update_volume_list_add(scene.lcc->attribute<3>(f1)); */
   }
 
   mengerVolumes.push_back(f2);
@@ -1981,9 +1983,9 @@ void MainWindow::split_vol_in_nine(Dart_handle dh, bool removecenter)
                    myrandom.get_int(0,256),
                    myrandom.get_int(0,256)));
 
-    update_volume_list_add(scene.lcc->attribute<3>(dh));
-    if ( !removecenter)
-      update_volume_list_add(scene.lcc->attribute<3>(f1));
+    // update_volume_list_add(scene.lcc->attribute<3>(dh));
+    /* if ( !removecenter)
+       update_volume_list_add(scene.lcc->attribute<3>(f1)); */
   }
 
   split_face_in_three(f1);
@@ -2040,8 +2042,8 @@ void MainWindow::split_vol_in_twentyseven(Dart_handle dh)
       (CGAL::Color(myrandom.get_int(0,256),
                    myrandom.get_int(0,256),
                    myrandom.get_int(0,256)));
-    update_volume_list_add(scene.lcc->attribute<3>(dh));
-    update_volume_list_add(scene.lcc->attribute<3>(f1));
+    // update_volume_list_add(scene.lcc->attribute<3>(dh));
+    // update_volume_list_add(scene.lcc->attribute<3>(f1));
 
   }
 
@@ -3170,7 +3172,7 @@ void MainWindow::onSierpinskiTriangleInc()
                      myrandom.get_int(0,256),
                      myrandom.get_int(0,256)));
 
-      update_volume_list_add(scene.lcc->attribute<3>(sierpinskiTriangleSurfaces[i]));
+      // update_volume_list_add(scene.lcc->attribute<3>(sierpinskiTriangleSurfaces[i]));
     }
 
     scene.lcc->correct_invalid_attributes();
@@ -3237,8 +3239,8 @@ void MainWindow::sierpinski_triangle_split_face_in_four(Dart_handle dh, bool rem
 
     if (sierpinskiTriangleUpdateAttributes)
     {
-      update_volume_list_add(scene.lcc->attribute<3>(scene.lcc->beta(d2,0)));
-      update_volume_list_add(scene.lcc->attribute<3>(scene.lcc->beta(d1,0)));
+      // update_volume_list_add(scene.lcc->attribute<3>(scene.lcc->beta(d2,0)));
+      // update_volume_list_add(scene.lcc->attribute<3>(scene.lcc->beta(d1,0)));
     }
     else
     {

@@ -93,8 +93,6 @@
     <addaction name="separator"/>
     <addaction name="actionExtend_filled_volumes"/>
     <addaction name="actionExtend_hidden_volumes"/>
-    <addaction name="separator"/>
-    <addaction name="actionRefresh_Scene"/>
    </widget>
    <widget class="QMenu" name="menuPlugins">
     <property name="enabled">

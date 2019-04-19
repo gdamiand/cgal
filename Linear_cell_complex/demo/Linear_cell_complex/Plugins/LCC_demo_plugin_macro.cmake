@@ -29,6 +29,7 @@ include(${CGAL_MODULES_DIR}/CGAL_add_test.cmake)
     cgal_add_compilation_test(${plugin_name})
 
     add_to_cached_list( CGAL_EXECUTABLE_TARGETS ${plugin_name} )
+    target_link_libraries( ${plugin_name} PUBLIC LCC_demo_framework )
     target_link_libraries( ${plugin_name} PUBLIC ${QT_LIBRARIES} )
     target_link_libraries( ${plugin_name} PUBLIC ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} )
   endmacro(LCC_demo_plugin)

@@ -66,18 +66,26 @@ foreach(SUB_DIR ${DEMO_PLUGINS})
    endif()
 endforeach()
 
+add_library(LCC_demo_framework STATIC
+    Viewer.cpp
+    MainWindow.cpp
+    Linear_cell_complex_3_demo.cpp
+    Linear_cell_complex_3_subdivision.cpp
+    Linear_cell_complex_pqq_subdivision.cpp
+    ${headers} ${uis}
+    ${CGAL_Qt5_RESOURCE_FILES} ${CGAL_Qt5_MOC_FILES}
+    )
+target_link_libraries(LCC_demo_framework PUBLIC
+    CGAL::CGAL CGAL::CGAL_Qt5 Qt5::Gui Qt5::OpenGL)
+
 add_executable(Linear_cell_complex_3_demo
-  Linear_cell_complex_3_demo.cpp MainWindow.cpp
-  Viewer.cpp Linear_cell_complex_3_subdivision.cpp
-  Linear_cell_complex_pqq_subdivision.cpp
   typedefs.h import_moka.h
   ${headers} ${plugins_src}
   ${uis} ${CGAL_Qt5_RESOURCE_FILES} ${CGAL_Qt5_MOC_FILES})
 
 add_to_cached_list(CGAL_EXECUTABLE_TARGETS Linear_cell_complex_3_demo)
 
-target_link_libraries(Linear_cell_complex_3_demo PUBLIC
-  CGAL::CGAL CGAL::CGAL_Qt5 Qt5::Gui Qt5::OpenGL)
+target_link_libraries(Linear_cell_complex_3_demo PUBLIC LCC_demo_framework)
 
 include(${CGAL_MODULES_DIR}/CGAL_add_test.cmake)
 cgal_add_compilation_test(Linear_cell_complex_3_demo)
