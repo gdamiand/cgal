@@ -16,6 +16,7 @@
 #include <CGAL/Concurrent_compact_container.h>
 #include <CGAL/Dart.h>
 #include <CGAL/Handle_hash_function.h>
+#include <array>
 #include <bitset>
 
 #include <boost/config.hpp>
@@ -38,10 +39,11 @@ namespace CGAL {
    * Definition of storages for dD Combinatorial map.
    */
   // Storage of darts with compact container, beta with handles
-  template<unsigned int d_, class Items_, class Alloc_, class Concurrent_tag >
+  template<unsigned int d_, class Items_, class Alloc_, class Concurrent_tag_ >
   class Combinatorial_map_storage_1
   {
   public:
+    typedef Concurrent_tag_ Concurrent_tag;
     typedef Combinatorial_map_storage_1<d_, Items_, Alloc_, Concurrent_tag> Self;
     typedef CGAL::Tag_false Use_index;
 
@@ -74,6 +76,7 @@ namespace CGAL {
 
     typedef Items_ Items;
     typedef Alloc_ Alloc;
+
     template <typename T>
     struct Container_for_attributes :
       public internal::Container_type
@@ -139,6 +142,13 @@ namespace CGAL {
     { return false; }
 
     /// Set simultaneously all the marks of this dart to a given value.
+    void set_dart_marks(Dart_const_handle ADart,
+                        const std::array<bool, NB_MARKS>& amarks) const
+    {
+      CGAL_assertion(ADart!=nullptr);
+      for(std::size_t i=0; i<NB_MARKS; ++i)
+      { ADart->set_mark(i, amarks[i]); }
+    }
     void set_dart_marks(Dart_const_handle ADart,
                         const std::bitset<NB_MARKS>& amarks) const
     {

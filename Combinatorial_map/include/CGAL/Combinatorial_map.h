@@ -21,6 +21,7 @@
 #include <CGAL/Combinatorial_map/internal/Combinatorial_map_group_functors.h>
 #include <CGAL/Combinatorial_map/internal/Combinatorial_map_copy_functors.h>
 #include <CGAL/Combinatorial_map/internal/Combinatorial_map_sewable.h>
+#include <CGAL/Combinatorial_map/internal/Combinatorial_map_marks_management.h>
 
 #include <CGAL/Combinatorial_map_storages.h>
 #include <CGAL/Combinatorial_map_functors.h>
@@ -38,6 +39,7 @@
 #include <CGAL/Cell_const_iterators.h>
 
 #include <CGAL/Unique_hash_map.h>
+#include <array>
 #include <bitset>
 #include <vector>
 #include <deque>
@@ -195,7 +197,7 @@ namespace CGAL {
       this->init_storage();
 
       this->mnb_used_marks = 0;
-      this->mmask_marks.reset();
+      this->mmask_marks.fill(false);
 
       for ( size_type i = 0; i < NB_MARKS; ++i)
       {
@@ -316,7 +318,7 @@ namespace CGAL {
               converters, pointconverter);
       }
 
-      CGAL_assertion (is_valid());
+      CGAL_expensive_assertion(is_valid());
     }
 
     // (1a) copy(amap, converters, dartinfoconverter, pointconverter)
@@ -665,10 +667,15 @@ namespace CGAL {
     void erase_dart(Dart_handle adart)
     {
       // 1) We update the number of marked darts.
-      for ( size_type i = 0; i < mnb_used_marks; ++i)
       {
-        if (is_marked(adart, mused_marks_stack[i]))
-          --mnb_marked_darts[mused_marks_stack[i]];
+        CGAL::internal::Mark_array_w_protector<typename Storage::Concurrent_tag>
+            p(m_mark_mutexes.global_mutex());
+
+        for ( size_type i = 0; i < mnb_used_marks; ++i)
+        {
+          if (is_marked(adart, mused_marks_stack[i]))
+          { --mnb_marked_darts[mused_marks_stack[i]]; }
+        }
       }
 
       // 2) We update the attribute_ref_counting.
@@ -686,10 +693,15 @@ namespace CGAL {
     void restricted_erase_dart(Dart_handle adart)
     {
       // 1) We update the number of marked darts.
-      for ( size_type i = 0; i < mnb_used_marks; ++i)
       {
-        if (is_marked(adart, mused_marks_stack[i]))
-          --mnb_marked_darts[mused_marks_stack[i]];
+        CGAL::internal::Mark_array_w_protector<typename Storage::Concurrent_tag>
+            p(m_mark_mutexes.global_mutex());
+
+        for ( size_type i = 0; i < mnb_used_marks; ++i)
+        {
+          if (is_marked(adart, mused_marks_stack[i]))
+          { --mnb_marked_darts[mused_marks_stack[i]]; }
+        }
       }
 
       // 2) We update the attribute_ref_counting.
@@ -864,7 +876,7 @@ namespace CGAL {
       set_marks(adart, amarks);
 
       for (unsigned int i = 0; i <= dimension; ++i)
-        dart_unlink_beta(adart, i);
+      { dart_unlink_beta(adart, i); }
 
       Helper::template Foreach_enabled_attributes
           <internal::Init_attribute_functor<Self> >::run(*this, adart);
@@ -973,7 +985,7 @@ namespace CGAL {
     size_type number_of_marked_darts(size_type amark) const
     {
       CGAL_assertion( is_reserved(amark) );
-      return mnb_marked_darts[amark];
+      return internal::get_for_mark(mnb_marked_darts[amark]);
     }
 
     /**  Count the number of unmarked darts for a given mark.
@@ -1008,13 +1020,15 @@ namespace CGAL {
      */
     size_type get_new_mark() const
     {
-      if (mnb_used_marks == NB_MARKS)
-      {
-        std::cerr << "Not enough Boolean marks: "
-          "increase NB_MARKS in item class." << std::endl;
-        std::cerr << "  (exception launched)" << std::endl;
-        throw Exception_no_more_available_mark();
-      }
+        CGAL::internal::Mark_array_w_protector<typename Storage::Concurrent_tag>
+            p(m_mark_mutexes.global_mutex());
+        if (mnb_used_marks==NB_MARKS)
+        {
+          std::cerr << "Not enough Boolean marks: "
+                       "increase NB_MARKS in item class." << std::endl;
+          std::cerr << "  (exception launched)" << std::endl;
+          throw Exception_no_more_available_mark();
+        }
 
       size_type m = mfree_marks_stack[mnb_used_marks];
       mused_marks_stack[mnb_used_marks] = m;
@@ -1043,7 +1057,7 @@ namespace CGAL {
     size_type get_number_of_times_mark_reserved(size_type amark) const
     {
       CGAL_assertion( amark<NB_MARKS );
-      return mnb_times_reserved_marks[amark];
+      return internal::get_for_mark(mnb_times_reserved_marks[amark]);
     }
 
     /** Negate the mark of all the darts for a given mark.
@@ -1055,9 +1069,9 @@ namespace CGAL {
     {
       CGAL_assertion( is_reserved(amark) );
 
-      mnb_marked_darts[amark] = number_of_darts() - mnb_marked_darts[amark];
-
-      mmask_marks.flip(amark);
+      internal::set_for_mark(mnb_marked_darts[amark],
+                             (number_of_darts()-number_of_marked_darts(amark)));
+      mmask_marks[amark]=!mmask_marks[amark];
     }
 
     /** Test if a given dart is marked for a given mark.
@@ -1068,7 +1082,6 @@ namespace CGAL {
     bool is_marked(Dart_const_handle adart, size_type amark) const
     {
       CGAL_assertion( is_reserved(amark) );
-
       return get_dart_mark(adart, amark)!=mmask_marks[amark];
     }
 
@@ -1086,8 +1099,7 @@ namespace CGAL {
       if (is_marked(adart, amark) != astate)
       {
         if (astate) ++mnb_marked_darts[amark];
-        else --mnb_marked_darts[amark];
-
+        else --mnb_marked_darts[amark];        
         flip_dart_mark(adart, amark);
       }
     }
@@ -1101,7 +1113,7 @@ namespace CGAL {
       CGAL_assertion( adart != null_dart_handle );
       CGAL_assertion( is_reserved(amark) );
 
-      if (is_marked(adart, amark)) return;
+      if (is_marked(adart, amark)) { return; }
 
       ++mnb_marked_darts[amark];
       flip_dart_mark(adart, amark);
@@ -1116,7 +1128,7 @@ namespace CGAL {
       CGAL_assertion( adart != null_dart_handle );
       CGAL_assertion( is_reserved(amark) );
 
-      if (!is_marked(adart, amark)) return;
+      if (!is_marked(adart, amark)) { return; }
 
       --mnb_marked_darts[amark];
       flip_dart_mark(adart, amark);
@@ -1152,14 +1164,13 @@ namespace CGAL {
       CGAL_assertion( is_reserved(amark) );
 
       if ( is_whole_map_marked(amark) )
-      {
-        negate_mark(amark);
-      }
+      { negate_mark(amark); }
       else if ( !is_whole_map_unmarked(amark) )
       {
-        for ( typename Dart_range::const_iterator it(darts().begin()),
-               itend(darts().end()); it!=itend; ++it)
-          unmark(it, amark);
+        assert(false); // TEMPO POUR DEBUG TO REMOVE
+        for (typename Dart_range::const_iterator it(darts().begin()),
+             itend(darts().end()); it!=itend; ++it)
+        { unmark(it, amark); }
       }
       CGAL_assertion(is_whole_map_unmarked(amark));
       unmark_null_dart(amark);
@@ -1172,14 +1183,20 @@ namespace CGAL {
     {
       CGAL_assertion( is_reserved(amark) );
 
+      {
+        CGAL::internal::Mark_array_w_protector<typename Storage::Concurrent_tag>
+          p(m_mark_mutexes.global_mutex());
       if ( mnb_times_reserved_marks[amark]>1 )
       {
         --mnb_times_reserved_marks[amark];
         return;
       }
+      }
 
       unmark_all(amark);
 
+      CGAL::internal::Mark_array_w_protector<typename Storage::Concurrent_tag>
+        p(m_mark_mutexes.global_mutex());
       // 1) We remove amark from the array mused_marks_stack by
       //    replacing it with the last mark in this array.
       mused_marks_stack[mindex_marks[amark]] =
@@ -1191,7 +1208,7 @@ namespace CGAL {
       mfree_marks_stack[ mnb_used_marks ] = amark;
       mindex_marks[amark] = mnb_used_marks;
 
-      mnb_times_reserved_marks[amark]=0;
+      internal::set_for_mark(mnb_times_reserved_marks[amark], 0);
     }
 
     template <unsigned int i, unsigned int d=dimension>
@@ -2713,16 +2730,16 @@ namespace CGAL {
      * @param adart the dart.
      * @param amarks the marks to set.
      */
-    void set_marks(Dart_const_handle adart,
+    /* void set_marks(Dart_const_handle adart,
                    const std::bitset<NB_MARKS> & amarks) const
-    { set_dart_marks(adart, amarks ^ mmask_marks); }
+    { set_dart_marks(adart, amarks ^ mmask_marks); } */
 
     /** Get simultaneously all the marks of a given dart.
      * @param adart the dart.
      * @return allt the marks of adart.
      */
-    std::bitset<NB_MARKS> get_marks(Dart_const_handle adart) const
-    { return get_dart_marks(adart) ^ mmask_marks; }
+    /* std::bitset<NB_MARKS> get_marks(Dart_const_handle adart) const
+    { return get_dart_marks(adart) ^ mmask_marks; } */
 
     /** Get the mask associated to a given mark.
      * @param amark the mark.
@@ -4073,12 +4090,11 @@ namespace CGAL {
       // 1) We store all the darts of the edge.
       std::deque<Dart_handle> vect;
       size_type m=get_new_mark();
-      {
-        for ( typename Dart_of_cell_basic_range<1>::iterator
-                it=darts_of_cell_basic<1>(adart, m).begin();
-              it != darts_of_cell_basic<1>(adart, m).end(); ++it )
-          vect.push_back(it);
-      }
+
+      for ( typename Dart_of_cell_basic_range<1>::iterator
+            it=darts_of_cell_basic<1>(adart, m).begin();
+            it != darts_of_cell_basic<1>(adart, m).end(); ++it )
+      { vect.push_back(it); }
 
       // 2) For each dart of the cell, we modify link of neighbors.
       typename std::deque<Dart_handle>::iterator it = vect.begin();
@@ -4738,11 +4754,15 @@ namespace CGAL {
     }
 
   protected:
+    typedef typename internal::Size_type<typename Storage::Concurrent_tag>::type
+        mysize_type;
+    internal::Mark_mutexes<typename Storage::Concurrent_tag, NB_MARKS> m_mark_mutexes;
+
     /// Number of times each mark is reserved. 0 if the mark is free.
-    mutable size_type mnb_times_reserved_marks[NB_MARKS];
+    mutable mysize_type mnb_times_reserved_marks[NB_MARKS];
 
     /// Mask marks to know the value of unmark dart, for each index i.
-    mutable std::bitset<NB_MARKS> mmask_marks;
+    mutable std::array<bool, NB_MARKS> mmask_marks;
 
     /// Number of used marks.
     mutable size_type mnb_used_marks;
@@ -4757,7 +4777,7 @@ namespace CGAL {
     mutable size_type mused_marks_stack[NB_MARKS];
 
     /// Number of marked darts for each used marks.
-    mutable size_type mnb_marked_darts[NB_MARKS];
+    mutable mysize_type mnb_marked_darts[NB_MARKS];
 
     /// Automatic management of the attributes:
     /// true means attributes are always maintained updated during operations.

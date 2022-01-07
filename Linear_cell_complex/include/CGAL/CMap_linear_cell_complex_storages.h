@@ -16,6 +16,7 @@
 #include <CGAL/Concurrent_compact_container.h>
 #include <CGAL/Dart.h>
 #include <CGAL/Handle_hash_function.h>
+#include <array>
 #include <bitset>
 
 #include <boost/config.hpp>
@@ -44,10 +45,11 @@ namespace CGAL {
   // as template parameter of Dart_wrapper. If we inherit, Self is not
   // the correct type).
   template<unsigned int d_, unsigned int ambient_dim,
-           class Traits_, class Items_, class Alloc_, class Concurrent_tag >
+           class Traits_, class Items_, class Alloc_, class Concurrent_tag_ >
   class CMap_linear_cell_complex_storage_1
   {
   public:
+    typedef Concurrent_tag_ Concurrent_tag;
     typedef typename Traits_::Point  Point;
     typedef typename Traits_::Vector Vector;
     typedef typename Traits_::FT     FT;
@@ -85,6 +87,7 @@ namespace CGAL {
 
     typedef Items_ Items;
     typedef Alloc_ Alloc;
+
     template <typename T>
     struct Container_for_attributes :
       public internal::Container_type
@@ -160,10 +163,19 @@ namespace CGAL {
 
     /// Set simultaneously all the marks of this dart to a given value.
     void set_dart_marks(Dart_const_handle ADart,
+                        const std::array<bool, NB_MARKS>& amarks) const
+    {
+      CGAL_assertion(ADart!=nullptr);
+      for(std::size_t i=0; i<NB_MARKS; ++i)
+      { ADart->set_mark(i, amarks[i]); }
+    }
+    void set_dart_marks(Dart_const_handle ADart,
                         const std::bitset<NB_MARKS>& amarks) const
     {
       CGAL_assertion( ADart!=nullptr );
-      ADart->set_marks(amarks);
+      // TODO ADart->set_marks(amarks);
+      for(std::size_t i=0; i<NB_MARKS; ++i)
+      { ADart->set_mark(i, amarks[i]); }
     }
     /// Return all the marks of a dart.
     std::bitset<NB_MARKS> get_dart_marks(Dart_const_handle ADart) const

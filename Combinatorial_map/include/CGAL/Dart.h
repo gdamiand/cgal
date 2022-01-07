@@ -119,7 +119,7 @@ namespace CGAL {
      *  because this is done in the combinatorial map class.
      */
     Dart_without_info()
-    {}
+    { mmarks.fill(false); }
 
     /** Copy constructor:
      * @param adart a dart.
@@ -148,7 +148,8 @@ namespace CGAL {
     void set_mark(size_type amark, bool avalue) const
     {
       CGAL_assertion(amark>=0 && amark<NB_MARKS);
-      mmarks.set(amark, avalue);
+      //mmarks.set(amark, avalue);
+      mmarks[amark]=avalue;
     }
     /** Flip the mark of a given mark number.
      * @param amark the mark number.
@@ -156,20 +157,21 @@ namespace CGAL {
     void flip_mark(size_type amark) const
     {
       CGAL_assertion(amark>=0 && amark<NB_MARKS);
-      mmarks.flip(amark);
+      //mmarks.flip(amark);
+      mmarks[amark]=!mmarks[amark];
     }
 
     /** Return all the marks of this dart.
      * @return the marks.
      */
-     std::bitset<NB_MARKS> get_marks() const
-    { return mmarks; }
+     //std::bitset<NB_MARKS> get_marks() const
+    //{ return mmarks; }
 
     /** Set simultaneously all the marks of this dart to a given value.
      * @param amarks the value of the marks.
      */
-     void set_marks(const std::bitset<NB_MARKS>& amarks) const
-    { mmarks = amarks; }
+    // void set_marks(const std::bitset<NB_MARKS>& amarks) const
+    //{ mmarks = amarks; }
 
     /// @return a handle on the i-attribute
     template<int i>
@@ -194,7 +196,8 @@ namespace CGAL {
     Dart_handle mf[dimension+1];
 
     /// Values of Boolean marks.
-    mutable std::bitset<NB_MARKS> mmarks;
+    //mutable std::bitset<NB_MARKS> mmarks;
+    mutable std::array<bool, NB_MARKS> mmarks;
 
     /// Attributes enabled
     typename Helper::Attribute_handles mattribute_handles;
