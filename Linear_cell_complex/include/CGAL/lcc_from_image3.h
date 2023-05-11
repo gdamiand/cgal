@@ -43,7 +43,7 @@ typename LCC::Dart_descriptor make_border(LCC& lcc, const CGAL::Image_3& im)
     last1=lcc.beta(tmp, 1, 1);
     last2=lcc.beta(tmp2, 1, 1);
   }
-  
+
   lcc.template link_beta<2>(first, last1);
   last1=lcc.beta(first, 1, 2, 1);
 
@@ -63,7 +63,7 @@ typename LCC::Dart_descriptor make_border(LCC& lcc, const CGAL::Image_3& im)
 
   // 4. And now we link the borders.
   lcc.template link_beta<2>(last2, lcc.beta(first, 0));
-  
+
   last2=lcc.beta(first, 1, 1, 2, 0);
   for(std::size_t x=0; x<=im.xdim(); ++x)
   {
@@ -81,13 +81,13 @@ void destroy_border(LCC& lcc, typename LCC::Dart_descriptor ADart,
 {
   std::vector<typename LCC::Dart_descriptor> todelete;
   todelete.reserve(4*(2+im.xdim())*(2+im.ydim()));
-  
+
   auto treated=lcc.get_new_mark();
   for(auto it=lcc.template darts_of_orbit_basic<1,2>(ADart, treated).begin(),
        itend=lcc.template darts_of_orbit_basic<1,2>(ADart, treated).end();
        it!=itend; ++it)
   { todelete.push_back(it); }
-  
+
   for(auto dh: todelete)
   { lcc.erase_dart(dh); }
 
@@ -110,22 +110,22 @@ typename LCC::Dart_descriptor precode_l8(LCC& lcc,
   assert(lcc.beta(ALast, 1, 1, 1, 1)  ==ALast);
   assert(lcc.beta(AUp, 1, 1, 1, 1)    ==AUp);
   assert(lcc.beta(ABehind, 1, 1, 1, 1)==ABehind);
-  
+
   typename LCC::Dart_descriptor t1=lcc.template beta<2>(AUp);
   typename LCC::Dart_descriptor t2=lcc.template beta<1, 2>(AUp);
   typename LCC::Dart_descriptor t3=lcc.template beta<1, 2>(ALast);
   typename LCC::Dart_descriptor t4=lcc.template beta<1, 2>(ABehind);
 
   // 1) First we modify the topology.
-  
+
   // Left face => front face
   lcc.template link_beta<2>(lcc.beta(ALast, 0), t1);
   lcc.template link_beta<2>(lcc.beta(ALast, 1), AUp);
-  
+
   // Behind face => right face
   lcc.template link_beta<2>(lcc.beta(ABehind, 0), t2);
   lcc.template link_beta<2>(lcc.beta(ABehind, 1), lcc.beta(AUp, 1));
-  
+
   // Upper face => down face
   lcc.template link_beta<2>(lcc.beta(AUp, 0), t3);
   lcc.template link_beta<2>(lcc.beta(AUp, 1, 1), t4);
@@ -331,11 +331,11 @@ bool lcc_from_image3(LCC& lcc, const CGAL::Image_3& im,
                      bool simplify_edges=false, bool simplify_vertices=false)
 {
   using DD=typename LCC::Dart_descriptor;
-  
+
   bool sameLeft;
   bool sameUp;
   bool sameBehind;
-  
+
   DD up      =NULL;
   DD behind  =NULL;
   DD nextLast=NULL;
@@ -362,9 +362,9 @@ bool lcc_from_image3(LCC& lcc, const CGAL::Image_3& im,
         sameBehind=(x==im.xdim() || z==im.zdim()) ||
                      (y>0 && y<im.ydim() &&
                       im.value(x, y-1, z)==im.value(x, y, z));
-        
+
         p=typename LCC::Point(x, y, z);
-        
+
         if(sameLeft && sameUp && sameBehind &&
             lcc.beta(last, 2)==lcc.beta(behind, 0, 0) &&
             lcc.beta(behind, 0, 2)==lcc.beta(up, 0, 0) &&
@@ -376,14 +376,14 @@ bool lcc_from_image3(LCC& lcc, const CGAL::Image_3& im,
         else
         {
           nextLast=LCC_from_image_internal::create_cube(lcc, last, up, behind, p);
-          
+
           // We test the three possible face removal.
           if(sameLeft)
           { lcc.template remove_cell<2>(last); }
-          
+
           if(sameBehind)
           { lcc.template remove_cell<2>(behind); }
-          
+
           if(sameUp)
           { lcc.template remove_cell<2>(up); }
 

@@ -29,7 +29,7 @@ int main(int argc, char*argv[])
     else
     { std::cout<<"Option "<<argv[i]<<" ignored."<<std::endl; }
   }
-  
+
   LCC3 lcc;
   CGAL::lcc_from_image3(lcc, image, simplify_vertices, simplify_edges);
   CGAL::draw(lcc);
