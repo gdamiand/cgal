@@ -4,7 +4,7 @@
 cmake_minimum_required(VERSION 3.1...3.23)
 project(Linear_cell_complex_Examples)
 
-find_package(CGAL REQUIRED OPTIONAL_COMPONENTS Qt5)
+find_package(CGAL REQUIRED OPTIONAL_COMPONENTS Qt5 ImageIO)
 
 # For Gprof.
 # ADD_DEFINITIONS("-pg")
@@ -28,7 +28,14 @@ create_single_source_cgal_program("voronoi_2.cpp")
 create_single_source_cgal_program("voronoi_3.cpp")
 
 create_single_source_cgal_program("draw_linear_cell_complex.cpp")
-if(CGAL_Qt5_FOUND)
+create_single_source_cgal_program("example_lcc_from_image.cpp")
+
+if(TARGET CGAL::CGAL_Basic_viewer)
   target_link_libraries(draw_linear_cell_complex PUBLIC CGAL::CGAL_Basic_viewer)
+  target_link_libraries(example_lcc_from_image PUBLIC CGAL::CGAL_Basic_viewer)
   target_link_libraries(linear_cell_complex_3_incremental_builder PUBLIC CGAL::CGAL_Basic_viewer)
+endif()
+
+if(TARGET CGAL::CGAL_ImageIO)
+  target_link_libraries(example_lcc_from_image PUBLIC CGAL::CGAL_ImageIO)
 endif()
