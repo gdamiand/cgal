@@ -13,12 +13,99 @@
 #ifndef LCC_FROM_IMAGE3_H
 #define LCC_FROM_IMAGE3_H
 //******************************************************************************
+#include <CGAL/boost/graph/iterator.h>
+#include <CGAL/boost/graph/helpers.h>
 #include <CGAL/Image_3.h>
 #include <CGAL/Union_find.h>
 #include <vector>
 //******************************************************************************
 namespace LCC_from_image_internal
 {
+/** Build a face graph from one volume of the LCC. */
+template <typename LCC, typename TargetMesh>
+void lcc_one_volume_to_face_graph(const LCC& lcc,
+                                  typename LCC::Dart_const_descriptor dd,
+                                  TargetMesh& tm)
+{
+  typedef typename LCC::Dart_const_descriptor DH;
+  typedef typename LCC::Vertex_attribute_const_descriptor VH;
+
+  using tm_vertex_descriptor=typename boost::graph_traits<TargetMesh>::vertex_descriptor;
+  using tm_face_descriptor=typename boost::graph_traits<TargetMesh>::face_descriptor;
+  using tm_halfedge_descriptor=typename boost::graph_traits<TargetMesh>::halfedge_descriptor;
+
+  std::unordered_map<DH, tm_halfedge_descriptor> darts_to_he;
+
+  // 1) Create all edges (pair of halfedges); keep a link between darts and halfedges
+  for (auto it=lcc.template darts_of_cell<3>(dd).begin(),
+       itend=lcc.template darts_of_cell<3>(dd).end(); it!=itend; ++it)
+  {
+    assert(!lcc.template is_free<2>(it));
+    if(it<lcc.template beta<2>(it))
+    {
+      auto ed=add_edge(tm);
+      auto hd=halfedge(ed, tm);
+      darts_to_he[it]=hd;
+      darts_to_he[lcc.template beta<2>(it)]=opposite(hd, tm);
+    }
+  }
+
+  // 2) Set next (and previous) links
+  for(auto it=darts_to_he.begin(), itend=darts_to_he.end(); it!=itend; ++it)
+  {
+    set_next(it->second, darts_to_he[lcc.template beta<1>(it->first)], tm);
+  }
+
+  // 3) Set vertices and faces
+  for(auto it=darts_to_he.begin(), itend=darts_to_he.end(); it!=itend; ++it)
+  {
+    if(target(it->second, tm)==TargetMesh::null_vertex())
+    {
+      tm_vertex_descriptor vd=add_vertex(tm);
+      set_halfedge(vd, it->second, tm);
+      tm.point(vd)=lcc.point(lcc.opposite(it->first));
+      CGAL::Halfedge_around_target_iterator<TargetMesh> hi, he;
+      for(boost::tie(hi, he)=CGAL::halfedges_around_target(it->second, tm);
+          hi!=he; ++hi)
+      { set_target(*hi, vd, tm); }
+    }
+    if(face(it->second, tm)==TargetMesh::null_face())
+    {
+      tm_face_descriptor fd=add_face(tm);
+      set_halfedge(fd, it->second, tm);
+      CGAL::Halfedge_around_face_iterator<TargetMesh> hi, he;
+      for(boost::tie(hi, he)=CGAL::halfedges_around_face(it->second, tm);
+          hi!=he; ++hi)
+      { set_face(*hi, fd, tm); }
+    }
+  }
+
+  /* std::cout<<"#Darts in 3-cell: "<<darts_to_he.size()<<"   #halfedges: "
+          <<tm.number_of_halfedges()<<std::endl;
+
+  for(auto it=tm.halfedges().begin(), itend=tm.halfedges().end(); it!=itend; ++it)
+  {
+    if(target(*it, tm)==TargetMesh::null_vertex())
+    { std::cout<<"Halfedge "<<*it<<" without vertex"<<std::endl; }
+    if(face(*it, tm)==TargetMesh::null_face())
+    { std::cout<<"Halfedge "<<*it<<" without faces"<<std::endl; }
+  } */
+}
+
+template <typename LCC, typename TargetMesh>
+void split_lcc_into_face_graphs(const LCC& lcc, std::vector<TargetMesh>& tm)
+{
+  tm.clear();
+  std::vector<typename LCC::Dart_const_descriptor> vols;
+  for(auto it=lcc.template one_dart_per_cell<3>().begin(),
+      itend=lcc.template one_dart_per_cell<3>().end(); it!=itend; ++it)
+  { vols.push_back(it); }
+
+  tm.resize(vols.size());
+  for(std::size_t i=0; i<vols.size(); ++i)
+  { lcc_one_volume_to_face_graph(lcc, vols[i], tm[i]); }
+}
+
 template<typename LCC>
 typename LCC::Dart_descriptor make_border(LCC& lcc, const CGAL::Image_3& im)
 {

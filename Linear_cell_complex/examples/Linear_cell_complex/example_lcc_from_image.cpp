@@ -3,9 +3,13 @@
 #include <CGAL/draw_linear_cell_complex.h>
 #include <CGAL/Image_3.h>
 #include <CGAL/lcc_from_image3.h>
+#include <CGAL/Surface_mesh.h>
+#include <CGAL/draw_surface_mesh.h>
 
 typedef float Image_word_type;
 typedef CGAL::Linear_cell_complex_for_combinatorial_map<3,3> LCC3;
+using K=CGAL::Exact_predicates_inexact_constructions_kernel;
+typedef CGAL::Surface_mesh<typename LCC3::Traits::Point_3> Mesh;
 
 int main(int argc, char*argv[])
 {
@@ -32,7 +36,15 @@ int main(int argc, char*argv[])
 
   LCC3 lcc;
   CGAL::lcc_from_image3(lcc, image, simplify_vertices, simplify_edges);
-  CGAL::draw(lcc);
+  // CGAL::draw(lcc);
+
+  std::vector<Mesh> res;
+  LCC_from_image_internal::split_lcc_into_face_graphs(lcc, res);
+  for(auto& m: res)
+  {
+    if(m.number_of_halfedges()>1000)
+    { CGAL::draw(m); }
+  }
 
   return EXIT_SUCCESS;
 }
