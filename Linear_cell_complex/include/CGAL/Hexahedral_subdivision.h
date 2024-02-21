@@ -182,7 +182,8 @@ public:
 
   Volume_info& volume_info(typename LCC::template Attribute_handle<3>::type ah)
   {
-#ifdef WITH_INDEX
+    // TODO template specialisation 
+#if 1 // WITH_INDEX
     return m_volume_info[ah];
 #else
     return m_volume_info[ah->id()];
