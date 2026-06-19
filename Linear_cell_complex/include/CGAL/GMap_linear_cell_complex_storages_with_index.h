@@ -194,12 +194,12 @@ namespace CGAL {
 
     /// Set simultaneously all the marks of this dart to a given value.
     void set_dart_marks(Dart_const_descriptor ADart,
-                        const BitsetType& amarks) const
+                        const Bitset_type& amarks) const
     {
       mdarts[ADart].set_marks(amarks);
     }
     /// Return all the marks of a dart.
-    BitsetType get_dart_marks(Dart_const_descriptor ADart) const
+    Bitset_type get_dart_marks(Dart_const_descriptor ADart) const
     {
       return mdarts[ADart].get_marks();
     }
