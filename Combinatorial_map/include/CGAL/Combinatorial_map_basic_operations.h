@@ -63,8 +63,7 @@ namespace CGAL
 
     for ( Iterator it(amap, adart); res && it.cont(); ++it )
     {
-      if (!amap.is_marked(it, amark))
-          res = false;
+      if (!amap.is_marked(it, amark)) res = false;
     }
 
     return res;
@@ -84,9 +83,6 @@ namespace CGAL
     amap.negate_mark(amark);
     bool res=CGAL::template is_whole_orbit_marked<Map,Iterator>(amap, adart, amark);
     amap.negate_mark(amark);
-
-    if(res == false)
-        std::cout << "whole orbit not unmarker for mark: " << amark << std::endl;
     return res;
   }
 

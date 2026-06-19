@@ -14,8 +14,8 @@
 
 #include <CGAL/Compact_container.h>
 #include <CGAL/Concurrent_compact_container.h>
-#include <CGAL/Handle_hash_function.h>
 #include <CGAL/Dart.h>
+#include <CGAL/Handle_hash_function.h>
 
 #include <boost/config.hpp>
 #if defined(BOOST_GCC)
@@ -52,7 +52,6 @@ namespace CGAL {
     using Self=GMap_linear_cell_complex_storage_1<d_, ambient_dim, Traits_,
     Items_, Alloc_>;
     using Use_index=CGAL::Tag_false;
-
     using Concurrent_tag=typename internal::Get_concurrent_tag<Items_>::type;
     using Char_bitset_tag=typename internal::Get_char_bitset_tag<Items_>::type;
 

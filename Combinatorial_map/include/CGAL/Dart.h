@@ -119,7 +119,6 @@ namespace CGAL {
     typedef WithId                                                       Has_id;
     using Type_for_compact_container=typename Refs::Type_for_compact_container;
 
-
     /// Typedef for attributes
     template<int i>
     struct Attribute_descriptor: public Refs::template Attribute_descriptor<i>
@@ -167,8 +166,8 @@ namespace CGAL {
      * @param adart a dart.
      */
     Dart_without_info(const Dart_without_info& other) :
-      mattribute_descriptors(other.mattribute_descriptors),
-      mmarks(other.mmarks)
+      mmarks(other.mmarks),
+      mattribute_descriptors(other.mattribute_descriptors)
     {
       for (unsigned int i=0; i<=dimension; ++i)
       { mf[i]=other.mf[i]; }
@@ -177,7 +176,6 @@ namespace CGAL {
     Self& operator=(const Self& other)
     {
       mmarks = other.mmarks;
-
       mattribute_descriptors=other.mattribute_descriptors;
       for (unsigned int i=0; i<=dimension; ++i)
       { mf[i]=other.mf[i]; }
@@ -191,7 +189,6 @@ namespace CGAL {
     bool get_mark(size_type amark) const
     {
       CGAL_assertion(amark>=0 && amark<NB_MARKS);
-
       return mmarks[amark];
     }
 
@@ -216,16 +213,14 @@ namespace CGAL {
     /** Return all the marks of this dart.
      * @return the marks.
      */
-     Bitset_type get_marks() const
+    Bitset_type get_marks() const
     { return mmarks; }
 
     /** Set simultaneously all the marks of this dart to a given value.
      * @param amarks the value of the marks.
      */
-     void set_marks(const Bitset_type& amarks) const
-    {
-         mmarks = amarks;
-     }
+    void set_marks(const Bitset_type& amarks) const
+    { mmarks = amarks; }
 
     /// @return a descriptor on the i-attribute
     template<int i>
