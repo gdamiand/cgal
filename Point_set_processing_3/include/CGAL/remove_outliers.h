@@ -20,7 +20,7 @@
 #include <CGAL/Point_set_processing_3/internal/Callback_wrapper.h>
 #include <CGAL/for_each.h>
 #include <CGAL/property_map.h>
-#include <CGAL/point_set_processing_assertions.h>
+#include <CGAL/assertions.h>
 #include <functional>
 
 #include <CGAL/Named_function_parameters.h>
@@ -191,8 +191,7 @@ remove_outliers(
                                                          typename Kernel::FT(0));
   double threshold_percent = choose_parameter(get_parameter(np, internal_np::threshold_percent), 10.);
   double threshold_distance = choose_parameter(get_parameter(np, internal_np::threshold_distance), 0.);
-  const std::function<bool(double)>& callback = choose_parameter(get_parameter(np, internal_np::callback),
-                                                                 std::function<bool(double)>());
+  const std::function<bool(double)>& callback = choose_parameter<std::function<bool(double)>>(get_parameter(np, internal_np::callback));
 
   typedef typename Kernel::FT FT;
 
@@ -206,12 +205,12 @@ remove_outliers(
   // precondition: at least one element in the container.
   // to fix: should have at least three distinct points
   // but this is costly to check
-  CGAL_point_set_processing_precondition(points.begin() != points.end());
+  CGAL_precondition(points.begin() != points.end());
 
   // precondition: at least 2 nearest neighbors
-  CGAL_point_set_processing_precondition(k >= 2);
+  CGAL_precondition(k >= 2);
 
-  CGAL_point_set_processing_precondition(threshold_percent >= 0 && threshold_percent <= 100);
+  CGAL_precondition(threshold_percent >= 0 && threshold_percent <= 100);
 
   Neighbor_query neighbor_query (points, point_map);
 

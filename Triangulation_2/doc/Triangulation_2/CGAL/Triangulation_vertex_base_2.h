@@ -20,9 +20,9 @@ the triangulation.
 
 \tparam Vb must be a model of the concept `TriangulationDSVertexBase_2`
 By default this parameter is
-instantiated by `Triangulation_ds_vertex_base_2<>`.
+instantiated with `Triangulation_ds_vertex_base_2<>`.
 
-\cgalModels `TriangulationVertexBase_2`
+\cgalModels{TriangulationVertexBase_2}
 
 \sa `CGAL::Triangulation_ds_vertex_base_2<Tds>`
 \sa `CGAL::Triangulation_face_base_2<Traits,Fb>`

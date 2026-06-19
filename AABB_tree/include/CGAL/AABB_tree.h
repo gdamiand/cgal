@@ -26,8 +26,7 @@
 #include <CGAL/AABB_tree/internal/AABB_search_tree.h>
 #include <CGAL/AABB_tree/internal/Has_nested_type_Shared_data.h>
 #include <CGAL/AABB_tree/internal/Primitive_helper.h>
-#include <boost/optional.hpp>
-#include <boost/lambda/lambda.hpp>
+#include <optional>
 
 #ifdef CGAL_HAS_THREADS
 #include <CGAL/mutex.h>
@@ -42,9 +41,9 @@ namespace CGAL {
 
   /**
    * Static data structure for efficient
-   * intersection and distance computations in 3D. It builds a
+   * intersection and distance computations in 2D and 3D. It builds a
    * hierarchy of axis-aligned bounding boxes (an AABB tree) from a set
-   * of 3D geometric objects, and can receive intersection and distance
+   * of geometric objects, and can receive intersection and distance
    * queries, provided that the corresponding predicates are
    * implemented in the traits class AABBTraits.
    * An instance of the class `AABBTraits` is internally stored.
@@ -75,9 +74,8 @@ namespace CGAL {
     /// Number type returned by the distance queries.
     typedef typename AABBTraits::FT FT;
 
-
-    /// Type of 3D point.
-    typedef typename AABBTraits::Point_3 Point;
+    /// Type of point.
+    typedef typename AABBTraits::Point Point;
 
     /// Type of input primitive.
     typedef typename AABBTraits::Primitive Primitive;
@@ -87,7 +85,7 @@ namespace CGAL {
     typedef typename Primitives::size_type size_type;
     /// Type of bounding box.
     typedef typename AABBTraits::Bounding_box Bounding_box;
-    /// 3D Point and Primitive Id type
+    /// Point and Primitive Id type
     typedef typename AABBTraits::Point_and_primitive_id Point_and_primitive_id;
     /// \deprecated
     typedef typename AABBTraits::Object_and_primitive_id Object_and_primitive_id;
@@ -126,11 +124,11 @@ namespace CGAL {
     Self& operator=(const Self&) = delete;
 
     /**
-     * @brief Builds the data structure from a sequence of primitives.
+     * @brief builds the data structure from a sequence of primitives.
      * @param first iterator over first primitive to insert
      * @param beyond past-the-end iterator
      *
-     * constructs an empty tree followed by a call to `insert(first,last,t...)`.
+     * constructs an empty tree followed by a call to \link insert(InputIterator, InputIterator, T&&...) `insert(first,last,t...)`\endlink.
      * The tree stays empty if the memory allocation is not successful.
      */
     template<typename InputIterator,typename ... T>
@@ -142,8 +140,9 @@ namespace CGAL {
     /// This procedure is called implicitly at the first call to a query member function.
     /// An explicit call to `build()` must be made to ensure that the next call to
     /// a query function will not trigger the construction of the data structure.
-    /// A call to `AABBTraits::set_shared_data(t...)` is made using the internally stored traits.
-    /// This procedure has a complexity of \f$O(n log(n))\f$, where \f$n\f$ is the number of
+    /// A call to \link AABBTraits::set_shared_data `AABBTraits::set_shared_data(t...)`\endlink
+    // is made using the internally stored traits.
+    /// This procedure has a complexity of \cgalBigO{n log(n)}, where \f$n\f$ is the number of
     /// primitives of the tree.
     template<typename ... T>
     void build(T&& ...);
@@ -162,16 +161,17 @@ namespace CGAL {
     /// \name Operations
     ///@{
 
-    /// is equivalent to calling `clear()`, `insert(first,last,t...)`, and `build()`
+    /// is equivalent to calling `clear()`, \link insert(InputIterator, InputIterator, T&&...) `insert(first,last,t...)`\endlink,
+    // and `build()`
     template<typename ConstPrimitiveIterator,typename ... T>
     void rebuild(ConstPrimitiveIterator first, ConstPrimitiveIterator beyond,T&& ...);
-
 
     /// adds a sequence of primitives to the set of primitives of the AABB tree.
     /// `%InputIterator` is any iterator and the parameter pack `T` contains any types
     /// such that `Primitive` has a constructor with the following signature:
     /// `Primitive(%InputIterator, T...)`. If `Primitive` is a model of the concept
-    /// `AABBPrimitiveWithSharedData`, a call to `AABBTraits::set_shared_data(t...)`
+    /// `AABBPrimitiveWithSharedData`, a call to
+    /// \link AABBTraits::set_shared_data `AABBTraits::set_shared_data(t...)`\endlink
     /// is made using the internally stored traits.
     template<typename InputIterator,typename ... T>
     void insert(InputIterator first, InputIterator beyond,T&& ...);
@@ -201,9 +201,7 @@ namespace CGAL {
     }
 
     /// returns the axis-aligned bounding box of the whole tree.
-    /// \pre `!empty()`
     const Bounding_box bbox() const {
-      CGAL_precondition(!empty());
       if(size() > 1)
         return root_node()->bbox();
       else
@@ -220,7 +218,7 @@ namespace CGAL {
 
   private:
     template <typename ... T>
-    void set_primitive_data_impl(CGAL::Boolean_tag<false>,T ... ){}
+    void set_primitive_data_impl(CGAL::Boolean_tag<false>,const T& ... ){}
     template <typename ... T>
     void set_primitive_data_impl(CGAL::Boolean_tag<true>,T&& ... t)
     {m_traits.set_shared_data(std::forward<T>(t)...);}
@@ -271,7 +269,7 @@ public:
     /// \tparam Query must be a type for which `Do_intersect` operators are
     ///               defined in the traits class `AABBTraits`.
     template <typename Query>
-    boost::optional<Primitive_id> any_intersected_primitive(const Query& query) const;
+    std::optional<Primitive_id> any_intersected_primitive(const Query& query) const;
     ///@}
 
     /// \name Intersections
@@ -294,14 +292,14 @@ public:
     /// \tparam Query must be a type for which `Do_intersect` and `Intersection` operators are
     ///               defined in the traits class `AABBTraits`.
     template <typename Query>
-    boost::optional< typename Intersection_and_primitive_id<Query>::Type >
+    std::optional< typename Intersection_and_primitive_id<Query>::Type >
     any_intersection(const Query& query) const;
 
 
 
     /// returns the intersection and  primitive id closest to the source point of the ray
     /// query.
-    /// \tparam Ray must be the same as `AABBTraits::Ray_3` and
+    /// \tparam Ray must be the same as `AABBTraits::Ray` and
     /// `do_intersect` predicates and intersections for it must be
     /// defined.
     /// \tparam Skip a functor with an operator
@@ -318,21 +316,21 @@ public:
     /// `AABBTraits` must be a model of `AABBRayIntersectionTraits` to
     /// call this member function.
     template<typename Ray, typename SkipFunctor>
-    boost::optional< typename Intersection_and_primitive_id<Ray>::Type >
+    std::optional< typename Intersection_and_primitive_id<Ray>::Type >
     first_intersection(const Ray& query, const SkipFunctor& skip) const;
 
     /// \cond
     template<typename Ray>
-    boost::optional< typename Intersection_and_primitive_id<Ray>::Type >
+    std::optional< typename Intersection_and_primitive_id<Ray>::Type >
     first_intersection(const Ray& query) const
     {
-      return first_intersection(query, boost::lambda::constant(false));
+      return first_intersection(query, [](Primitive_id){ return false; });
     }
     /// \endcond
 
     /// returns the primitive id closest to the source point of the ray
     /// query.
-    /// \tparam Ray must be the same as `AABBTraits::Ray_3` and
+    /// \tparam Ray must be the same as `AABBTraits::Ray` and
     /// `do_intersect` predicates and intersections for it must be
     /// defined.
     /// \tparam Skip a functor with an operator
@@ -343,15 +341,15 @@ public:
     /// `AABBTraits` must be a model of `AABBRayIntersectionTraits` to
     /// call this member function.
     template<typename Ray, typename SkipFunctor>
-    boost::optional<Primitive_id>
+    std::optional<Primitive_id>
     first_intersected_primitive(const Ray& query, const SkipFunctor& skip) const;
 
     /// \cond
     template<typename Ray>
-    boost::optional<Primitive_id>
+    std::optional<Primitive_id>
     first_intersected_primitive(const Ray& query) const
     {
-      return first_intersected_primitive(query, boost::lambda::constant(false));
+      return first_intersected_primitive(query, [](Primitive_id){ return false; });
     }
     /// \endcond
     ///@}
@@ -553,7 +551,7 @@ public:
         traits.intersection(query, singleton_data());
         break;
       default: // if(size() >= 2)
-        root_node()->template traversal_with_priority_and_group_traversal(m_primitives, query, traits, m_primitives.size(), 0, group_traversal_bound);
+        root_node()->traversal_with_priority_and_group_traversal(m_primitives, query, traits, m_primitives.size(), 0, group_traversal_bound);
       }
     }
 
@@ -964,7 +962,7 @@ public:
 
   template <typename Tr>
   template <typename Query>
-  boost::optional< typename AABB_tree<Tr>::template Intersection_and_primitive_id<Query>::Type >
+  std::optional< typename AABB_tree<Tr>::template Intersection_and_primitive_id<Query>::Type >
     AABB_tree<Tr>::any_intersection(const Query& query) const
   {
     using namespace CGAL::internal::AABB_tree;
@@ -976,7 +974,7 @@ public:
 
   template <typename Tr>
   template <typename Query>
-  boost::optional<typename AABB_tree<Tr>::Primitive_id>
+  std::optional<typename AABB_tree<Tr>::Primitive_id>
     AABB_tree<Tr>::any_intersected_primitive(const Query& query) const
   {
     using namespace CGAL::internal::AABB_tree;

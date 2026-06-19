@@ -22,7 +22,7 @@
 #include <CGAL/for_each.h>
 #include <CGAL/Monge_via_jet_fitting.h>
 #include <CGAL/property_map.h>
-#include <CGAL/point_set_processing_assertions.h>
+#include <CGAL/assertions.h>
 #include <functional>
 
 #include <CGAL/Named_function_parameters.h>
@@ -200,7 +200,7 @@ jet_smooth_point_set(
   typedef typename NP_helper::Geom_traits Kernel;
   typedef typename GetSvdTraits<NamedParameters>::type SvdTraits;
 
-  CGAL_static_assertion_msg(!(std::is_same<SvdTraits,
+  static_assert(!(std::is_same<SvdTraits,
                               typename GetSvdTraits<NamedParameters>::NoTraits>::value),
                             "Error: no SVD traits");
 
@@ -209,8 +209,7 @@ jet_smooth_point_set(
                                                          typename Kernel::FT(0));
   unsigned int degree_fitting = choose_parameter(get_parameter(np, internal_np::degree_fitting), 2);
   unsigned int degree_monge = choose_parameter(get_parameter(np, internal_np::degree_monge), 2);
-  const std::function<bool(double)>& callback = choose_parameter(get_parameter(np, internal_np::callback),
-                                                               std::function<bool(double)>());
+  const std::function<bool(double)>& callback = choose_parameter<std::function<bool(double)>>(get_parameter(np, internal_np::callback));
 
   // types for K nearest neighbors search structure
   typedef Point_set_processing_3::internal::Neighbor_query<Kernel, PointRange&, PointMap> Neighbor_query;
@@ -218,12 +217,12 @@ jet_smooth_point_set(
   // precondition: at least one element in the container.
   // to fix: should have at least three distinct points
   // but this is costly to check
-  CGAL_point_set_processing_precondition(points.begin() != points.end());
+  CGAL_precondition(points.begin() != points.end());
 
   // precondition: at least 2 nearest neighbors
-  CGAL_point_set_processing_precondition(k >= 2);
+  CGAL_precondition(k >= 2);
 
-  // Instanciate a KD-tree search.
+  // Instantiate a KD-tree search.
   Neighbor_query neighbor_query (points, point_map);
 
   // Iterates over input points and mutates them.

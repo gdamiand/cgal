@@ -100,7 +100,7 @@ namespace CGAL {
         ///
         /// The variable of a mixed integer program.
         ///
-        /// \cgalModels `MixedIntegerProgramVariable`
+        /// \cgalModels{MixedIntegerProgramVariable}
         template <typename FT>
         class Variable : public Solver_entry<FT>, public Bound<FT>
         {
@@ -199,7 +199,7 @@ namespace CGAL {
         ///
         /// The linear constraint of a mixed integer program.
         ///
-        /// \cgalModels `MixedIntegerProgramLinearConstraint`
+        /// \cgalModels{MixedIntegerProgramLinearConstraint}
         template <typename FT>
         class Linear_constraint : public Linear_expression<FT>, public Bound<FT>
         {
@@ -231,7 +231,7 @@ namespace CGAL {
         ///
         /// The linear objective of a mixed integer program.
         ///
-        /// \cgalModels `MixedIntegerProgramLinearObjective`
+        /// \cgalModels{MixedIntegerProgramLinearObjective}
         ///
         template <typename FT>
         class Linear_objective : public Linear_expression<FT>
@@ -281,7 +281,7 @@ namespace CGAL {
         /// \tparam FT Number type
         /// \endcond
         ///
-        /// \cgalModels `MixedIntegerProgramTraits`
+        /// \cgalModels{MixedIntegerProgramTraits}
         template <typename FT>
         class Mixed_integer_program_traits
         {
@@ -658,13 +658,13 @@ namespace CGAL {
 
         template<typename FT>
         std::size_t Mixed_integer_program_traits<FT>::number_of_integer_variables() const {
-                std::size_t num_iteger_var = 0;
+                std::size_t num_integer_var = 0;
                 for (std::size_t i = 0; i < variables_.size(); ++i) {
                         const Variable* v = variables_[i];
                         if (v->variable_type() == Variable::INTEGER)
-                                ++num_iteger_var;
+                                ++num_integer_var;
                 }
-                return num_iteger_var;
+                return num_integer_var;
         }
 
         template<typename FT>

@@ -22,7 +22,6 @@
 #include <CGAL/Point_set_processing_3/internal/Callback_wrapper.h>
 #include <CGAL/for_each.h>
 #include <CGAL/property_map.h>
-#include <CGAL/point_set_processing_assertions.h>
 #include <CGAL/assertions.h>
 #include <functional>
 
@@ -167,8 +166,7 @@ compute_average_spacing(
   typedef typename NP_helper::Geom_traits Kernel;
 
   PointMap point_map = NP_helper::get_const_point_map(points, np);
-  const std::function<bool(double)>& callback = choose_parameter(get_parameter(np, internal_np::callback),
-                                                                 std::function<bool(double)>());
+  const std::function<bool(double)>& callback = choose_parameter<std::function<bool(double)>>(get_parameter(np, internal_np::callback));
 
   // types for K nearest neighbors search structure
   typedef typename Kernel::FT FT;
@@ -177,12 +175,12 @@ compute_average_spacing(
   // precondition: at least one element in the container.
   // to fix: should have at least three distinct points
   // but this is costly to check
-  CGAL_point_set_processing_precondition(points.begin() != points.end());
+  CGAL_precondition(points.begin() != points.end());
 
   // precondition: at least 2 nearest neighbors
-  CGAL_point_set_processing_precondition(k >= 2);
+  CGAL_precondition(k >= 2);
 
-  // Instanciate a KD-tree search.
+  // Instantiate a KD-tree search.
   Neighbor_query neighbor_query (points, point_map);
 
   // iterate over input points, compute and output normal

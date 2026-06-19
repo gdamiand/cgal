@@ -296,11 +296,11 @@ namespace Planes {
 
     using PlaneIndexMap = typename CGAL::Point_set_processing_3::GetPlaneIndexMap<NamedParameters>::type;
 
-    CGAL_static_assertion_msg((!is_default_parameter<NamedParameters, internal_np::plane_index_t>::value),
+    static_assert(!is_default_parameter<NamedParameters, internal_np::plane_index_t>::value,
                               "Error: no plane index map");
 
     const PlaneIndexMap index_map =
-      choose_parameter(get_parameter(np, internal_np::plane_index_map), PlaneIndexMap());
+      choose_parameter<PlaneIndexMap>(get_parameter(np, internal_np::plane_index_map));
 
     using Kernel = typename Kernel_traits<
       typename boost::property_traits<PointMap>::value_type>::type;
@@ -450,12 +450,12 @@ namespace Planes {
     using PlaneMap = typename CGAL::Point_set_processing_3::
       GetPlaneMap<PlaneRange, NamedParameters>::type;
     const PlaneMap plane_map =
-      choose_parameter(get_parameter(np, internal_np::plane_map), PlaneMap());
+      choose_parameter<PlaneMap>(get_parameter(np, internal_np::plane_map));
 
     using PointMap = typename CGAL::
       GetPointMap<PointRange, NamedParameters>::type;
     const PointMap point_map =
-      choose_parameter(get_parameter(np, internal_np::point_map), PointMap());
+      choose_parameter<PointMap>(get_parameter(np, internal_np::point_map));
 
     regularize_planes(planes, plane_map, points, point_map, np);
   }

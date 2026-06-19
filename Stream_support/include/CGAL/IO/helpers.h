@@ -15,6 +15,7 @@
 #include <CGAL/assertions.h>
 #include <CGAL/Container_helper.h>
 #include <CGAL/Has_member.h>
+#include <CGAL/Point_2.h>
 #include <CGAL/Point_3.h>
 #include <CGAL/type_traits/is_iterator.h>
 
@@ -22,27 +23,36 @@
 #include <boost/mpl/has_xxx.hpp>
 #include <boost/range/has_range_iterator.hpp>
 
+#include <algorithm>
+#include <string>
+
 namespace CGAL {
 namespace IO {
 namespace internal {
 
-// @MaelRL Shall we update that code now?
-// Ideally this should be a std::is_constructible(double, double, double) but boost::is_constructible
-// is not safe to use without CXX11
 template <typename Kernel>
-void fill_point(const double x, const double y, const double z, const double w, CGAL::Point_3<Kernel>& pt)
+void fill_point(const double x, const double y, const double /*z*/, const double w,
+                CGAL::Point_2<Kernel>& pt)
 {
   typedef typename Kernel::FT FT;
-  pt = CGAL::Point_3<Kernel>(FT(x/w), FT(y/w), FT(z/w));
+  pt = CGAL::Point_2<Kernel>(FT(x)/FT(w), FT(y)/FT(w));
 }
 
-template <typename Point_3>
-void fill_point(const double x, const double y, const double z, const double w, Point_3& pt)
+template <typename Kernel>
+void fill_point(const double x, const double y, const double z, const double w,
+                CGAL::Point_3<Kernel>& pt)
 {
-  // just in case something weirder than arrays or CGAL points are used as points...
-  CGAL::internal::resize(pt, 3);
+  typedef typename Kernel::FT FT;
+  pt = CGAL::Point_3<Kernel>(FT(x)/FT(w), FT(y)/FT(w), FT(z)/FT(w));
+}
 
-  pt[0] = x/w; pt[1] = y/w; pt[2] = z/w;
+// something else (arrays...)
+template <typename Point>
+void fill_point(const double x, const double y, const double z, const double w,
+                Point& pt)
+{
+  CGAL::internal::resize(pt, 3);
+  pt[0] = x / w; pt[1] = y / w; pt[2] = z / w;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -54,7 +64,10 @@ static inline std::string get_file_extension(const std::string fname)
     return std::string();
 
   std::string ext = fname.substr(dot+1, fname.length() - dot - 1);
-  std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+  std::transform(ext.begin(), ext.end(), ext.begin(),
+                 [](char c) {
+                   return static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+                 });
 
   return ext;
 }
@@ -74,23 +87,23 @@ struct is_Point_set_3 : has_Point_set<T> { };
 // Point_set_3 and strings also functions as ranges, but we want to match polygon soups here
 template <typename T>
 struct is_Range
-  : public boost::mpl::and_<
-             boost::has_range_const_iterator<T>, // should be a range
-             boost::mpl::not_<is_Point_set_3<T> >, // but not a Point_set_3
-             boost::mpl::not_<boost::is_convertible<T, std::string> > > // or a std::string / char [x]
+  : public std::bool_constant<
+             boost::has_range_const_iterator<T>::value && // should be a range
+             !is_Point_set_3<T>::value && // but not a Point_set_3
+             !std::is_convertible_v<T, std::string> > // or a std::string / char [x]
 { };
 
 template <class T>
-CGAL_CPP17_INLINE constexpr bool is_Range_v = is_Range<T>::value;
+inline constexpr bool is_Range_v = is_Range<T>::value;
 
 // For polygon meshes
 template <typename T>
 struct is_Point_set_or_Range_or_Iterator
-  : public boost::mpl::or_<is_Point_set_3<T>, is_Range<T>, is_iterator<T> >
+  : public std::bool_constant<is_Point_set_3<T>::value || is_Range<T>::value || is_iterator<T>::value >
 { };
 
 template <class T>
-CGAL_CPP17_INLINE constexpr bool is_Point_set_or_Range_or_Iterator_v = is_Point_set_or_Range_or_Iterator<T>::value;
+inline constexpr bool is_Point_set_or_Range_or_Iterator_v = is_Point_set_or_Range_or_Iterator<T>::value;
 
 } // end namespace internal
 } // end namespace IO

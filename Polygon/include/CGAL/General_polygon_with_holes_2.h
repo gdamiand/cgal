@@ -12,7 +12,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later OR LicenseRef-Commercial
 //
 //
-// Author(s)     : Baruch Zukerman <baruchzu@post.tau.ac.il>
+// Author(s): Baruch Zukerman <baruchzu@post.tau.ac.il>
+//            Efi Fogel <efifogel@gmail.com>
 
 #ifndef CGAL_GENERAL_POLYGON_WITH_HOLES_2_H
 #define CGAL_GENERAL_POLYGON_WITH_HOLES_2_H
@@ -27,13 +28,13 @@ namespace CGAL {
  *
  * The class `General_polygon_with_holes_2` models the concept
  * `GeneralPolygonWithHoles_2`. It represents a general polygon with holes.
- * It is parameterized with a type `Polygon` used to define the exposed
- * type `Polygon_2`. This type represents the outer boundary of the general
+ * It is parameterized with a type `Polygon_` used to define the exposed
+ * type `%Polygon_2`. This type represents the outer boundary of the general
  * polygon and each hole.
  *
  * \tparam Polygon_ must have input and output operators.
  *
- * \cgalModels `GeneralPolygonWithHoles_2`
+ * \cgalModels{GeneralPolygonWithHoles_2}
  */
 template <typename Polygon_>
 class General_polygon_with_holes_2 {
@@ -56,7 +57,7 @@ public:
 
   typedef unsigned int                                Size;
 
-  General_polygon_with_holes_2() : m_pgn() {}
+  General_polygon_with_holes_2() = default;
 
 
   explicit General_polygon_with_holes_2(const Polygon_2& pgn_boundary) :
@@ -107,6 +108,10 @@ public:
 
   void erase_hole(Hole_iterator hit) { m_holes.erase(hit); }
 
+  void clear_outer_boundary() { m_pgn.clear(); }
+
+  void clear_holes() { m_holes.clear(); }
+
   bool has_holes() const { return (!m_holes.empty()); }
 
   Size number_of_holes() const { return static_cast<Size>(m_holes.size()); }
@@ -117,6 +122,19 @@ public:
   }
 
   bool is_plane() const { return (m_pgn.is_empty() && m_holes.empty()); }
+
+  bool is_empty() const
+  {
+    if(! outer_boundary().is_empty()) {
+        return false;
+      }
+    for(const auto& h : holes()){
+      if(! h.is_empty()){
+        return false;
+      }
+    }
+    return true;
+  }
 
 protected:
   Polygon_2 m_pgn;
@@ -130,8 +148,8 @@ protected:
 This operator exports a `General_polygon_with_holes_2` to the output stream `os`.
 
 An \ascii and a binary format exist. The format can be selected with
-the \cgal modifiers for streams, `set_ascii_mode()` and `set_binary_mode()`,
-respectively. The modifier `set_pretty_mode()` can be used to allow for (a
+the \cgal modifiers for streams, `CGAL::IO::set_ascii_mode()` and `CGAL::IO::set_binary_mode()`,
+respectively. The modifier `CGAL::IO::set_pretty_mode()` can be used to allow for (a
 few) structuring comments in the output. Otherwise, the output would
 be free of comments. The default for writing is \ascii without comments.
 

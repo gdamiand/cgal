@@ -13,7 +13,7 @@ An instance of this class represents an extension of the type `NT` by *one* squa
 
 For example, let `Integer` be some type representing \f$ \mathbb{Z}\f$, then
 `Sqrt_extension<Integer,Integer>` is able to represent \f$ \mathbb{Z}[\sqrt{\mathrm{root}}]\f$
-for some arbitrary Integer \f$\mathrm{root}\f$. \cgalFootnote{\f$ R[a]\f$ denotes the extension of a ring \f$ R\f$ by an element \f$ a\f$. See also: <A HREF="http://mathworld.wolfram.com/ExtensionRing.html">\cgalFootnoteCode{http://mathworld.wolfram.com/ExtensionRing.html}</A>}
+for some arbitrary Integer \f$\mathrm{root}\f$. \cgalFootnote{\f$ R[a]\f$ denotes the extension of a ring \f$ R\f$ by an element \f$ a\f$. See also: <A HREF="https://mathworld.wolfram.com/ExtensionRing.html">\cgalFootnoteCode{https://mathworld.wolfram.com/ExtensionRing.html}</A>}
 The value of \f$\mathrm{root}\f$ is set at
 construction time, or set to zero if it is not specified.
 
@@ -87,14 +87,16 @@ The fourth template argument, `FilterPredicates`, triggers an internal filter th
 
 In case `NT` is not `RealEmbeddable`, `DifferentExtensionComparable` as well as `FilterPredicates` have no effect.
 
-\cgalModels `Assignable`
-\cgalModels `CopyConstructible`
-\cgalModels `DefaultConstructible`
-\cgalModels `EqualityComparable`
-\cgalModels `ImplicitInteroperable` with `int`
-\cgalModels `ImplicitInteroperable` with `NT`
-\cgalModels `Fraction` if NT is a `Fraction`
-\cgalModels `RootOf_2`
+\cgalModelsBareBegin
+\cgalModelsBare{`Assignable`}
+\cgalModelsBare{`CopyConstructible`}
+\cgalModelsBare{`DefaultConstructible`}
+\cgalModelsBare{`EqualityComparable`}
+\cgalModelsBare{`ImplicitInteroperable` with `int`}
+\cgalModelsBare{`ImplicitInteroperable` with `NT`}
+\cgalModelsBare{`Fraction` if NT is a `Fraction`}
+\cgalModelsBare{`RootOf_2`}
+\cgalModelsBareEnd
 
 \sa `IntegralDomainWithoutDivision`
 \sa `IntegralDomain`

@@ -5,10 +5,11 @@
 The concept `MutableFaceGraph` refines the concepts `FaceGraph` and `MutableHalfedgeGraph` and adds
 the requirement for operations to add faces and to modify face-halfedge relations.
 
-\cgalRefines `FaceGraph`
-\cgalRefines `MutableHalfedgeGraph`
+\cgalRefines{FaceGraph,MutableHalfedgeGraph}
 
-\cgalHasModel See \link PkgBGLTraits Boost Graph Traits Specializations \endlink
+\cgalHasModelsBegin
+\cgalHasModelsBare{See \link PkgBGLTraits Boost Graph Traits Specializations \endlink}
+\cgalHasModelsEnd
 
 \sa \link PkgBGLConcepts Graph Concepts \endlink
 */
@@ -25,7 +26,7 @@ add_face(MutableFaceGraph& g);
 Removes `f` from the graph.
  */
 template <typename MutableFaceGraph>
-boost::graph_traits<MutableFaceGraph>::face_descriptor
+void
 remove_face(boost::graph_traits<MutableFaceGraph>::face_descriptor f, MutableFaceGraph& g);
 
 /*! \relates MutableFaceGraph

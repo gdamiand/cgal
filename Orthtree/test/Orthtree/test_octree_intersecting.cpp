@@ -1,17 +1,17 @@
 #define CGAL_TRACE_STREAM std::cerr
 
-#include <iostream>
 #include <CGAL/Octree.h>
 #include <CGAL/Orthtree/Traversals.h>
-#include <CGAL/Simple_cartesian.h>
 
-#include <cassert>
 #include <CGAL/point_generators_3.h>
+#include <CGAL/Simple_cartesian.h>
+#include <iostream>
+#include <cassert>
 
-typedef CGAL::Simple_cartesian<double> Kernel;
-typedef Kernel::Point_3 Point;
-typedef std::vector<Point> Point_vector;
-typedef CGAL::Octree<Kernel, Point_vector> Octree;
+using Kernel = CGAL::Simple_cartesian<double>;
+using Point = Kernel::Point_3;
+using Point_vector = std::vector<Point>;
+using Octree = CGAL::Octree<Kernel, Point_vector>;
 
 int main(void) {
 
@@ -34,7 +34,7 @@ int main(void) {
   points.emplace_back(-0.9, -1, -1);
 
   // Create an octree from the vector
-  Octree octree(points);
+  Octree octree(Octree::Traits{points});
 
   // Build the octree
   octree.refine(10, 2);
@@ -43,10 +43,11 @@ int main(void) {
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   {
     // Set the search point
-    auto query = Point{1, 1, 1};
+    auto query = Point{ 1, 1, 1 };
 
     // Get a list of nodes intersected
-    std::vector<Octree::Node> nodes{};
+    std::vector<Octree::Node_index> nodes{};
+
     octree.intersected_nodes(query, std::back_inserter(nodes));
 
     // A point should only intersect one node
@@ -56,22 +57,65 @@ int main(void) {
     assert(octree.locate(Point(1, 1, 1)) == nodes[0]);
   }
 
-  // Intersection with a sphere
+  // Intersection with a point using a lambda function (not particularly useful)
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   {
     // Set the search point
-    auto query = Kernel::Sphere_3(Point{1, 0.5, 1}, 1.0);
+    auto query = Point{ 1, 1, 1 };
 
     // Get a list of nodes intersected
-    std::vector<Octree::Node> nodes{};
-    octree.intersected_nodes(query, std::back_inserter(nodes));
+    std::vector<Octree::Node_index> nodes{};
+
+    auto func = [&](const Point& p, const Octree::Bbox& bbox) -> bool {
+      return CGAL::do_intersect(bbox, p);
+      };
+
+    octree.intersected_nodes(query, std::back_inserter(nodes), func);
+
+    // A point should only intersect one node
+    assert(1 == nodes.size());
+
+    // That node should be the node leaf that contains the point
+    assert(octree.locate(Point(1, 1, 1)) == nodes[0]);
+  }
+
+  // Intersection with a ball
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  {
+    // Get a list of nodes intersected
+    std::vector<Octree::Node_index> nodes{};
+    octree.intersected_nodes(Point(1, 0.5, 1), 1.0, std::back_inserter(nodes));
 
     // Check the results
     assert(4 == nodes.size());
-    assert(octree[Octree::Traits::RIGHT_TOP_BACK] == nodes[0]);
-    assert(octree[Octree::Traits::RIGHT_BOTTOM_FRONT] == nodes[1]);
-    assert(octree[Octree::Traits::LEFT_TOP_FRONT] == nodes[2]);
-    assert(octree[Octree::Traits::RIGHT_TOP_FRONT] == nodes[3]);
+    assert(octree.node(Octree::Traits::RIGHT_TOP_BACK) == nodes[0]);
+    assert(octree.node(Octree::Traits::RIGHT_BOTTOM_FRONT) == nodes[1]);
+    assert(octree.node(Octree::Traits::LEFT_TOP_FRONT) == nodes[2]);
+    assert(octree.node(Octree::Traits::RIGHT_TOP_FRONT) == nodes[3]);
+  }
+
+  // Intersection with a sphere (does not include the interior)
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  {
+    // Get a list of nodes intersected, in this case the 8 leaf nodes in the corners
+    std::vector<Octree::Node_index> nodes{};
+    octree.intersected_nodes(Kernel::Sphere_3(Point(0, 0, 0), 3), std::back_inserter(nodes));
+
+    // Check the results
+    assert(8 == nodes.size());
+
+    auto n = octree.node(Octree::Traits::RIGHT_BOTTOM_BACK);
+    while (!octree.is_leaf(n))
+      n = octree.child(n, Octree::Traits::RIGHT_BOTTOM_BACK);
+
+    assert(octree.node(Octree::Traits::LEFT_BOTTOM_BACK) == nodes[0]);
+    assert(n == nodes[1]);
+    assert(octree.node(Octree::Traits::LEFT_TOP_BACK) == nodes[2]);
+    assert(octree.node(Octree::Traits::RIGHT_TOP_BACK) == nodes[3]);
+    assert(octree.node(Octree::Traits::LEFT_BOTTOM_FRONT) == nodes[4]);
+    assert(octree.node(Octree::Traits::RIGHT_BOTTOM_FRONT) == nodes[5]);
+    assert(octree.node(Octree::Traits::LEFT_TOP_FRONT) == nodes[6]);
+    assert(octree.node(Octree::Traits::RIGHT_TOP_FRONT) == nodes[7]);
   }
 
   // Intersection with a ray
@@ -81,19 +125,22 @@ int main(void) {
     auto query = Kernel::Ray_3(Point{1, 1, 1}, Point{0, 0, 0});
 
     // Get a list of nodes intersected
-    std::vector<Octree::Node> nodes{};
+    std::vector<Octree::Node_index> nodes{};
     octree.intersected_nodes(query, std::back_inserter(nodes));
 
     // Check the results
     assert(8 == nodes.size());
-    assert(octree[Octree::Traits::LEFT_BOTTOM_BACK] == nodes[0]);
-    assert(octree[Octree::Traits::RIGHT_BOTTOM_BACK][Octree::Traits::LEFT_TOP_FRONT] == nodes[1]);
-    assert(octree[Octree::Traits::LEFT_TOP_BACK] == nodes[2]);
-    assert(octree[Octree::Traits::RIGHT_TOP_BACK] == nodes[3]);
-    assert(octree[Octree::Traits::LEFT_BOTTOM_FRONT] == nodes[4]);
-    assert(octree[Octree::Traits::RIGHT_BOTTOM_FRONT] == nodes[5]);
-    assert(octree[Octree::Traits::LEFT_TOP_FRONT] == nodes[6]);
-    assert(octree[Octree::Traits::RIGHT_TOP_FRONT] == nodes[7]);
+    assert(octree.node(Octree::Traits::LEFT_BOTTOM_BACK) == nodes[0]);
+    assert(
+      octree.node(Octree::Traits::RIGHT_BOTTOM_BACK, Octree::Traits::LEFT_TOP_FRONT)
+      == nodes[1]
+    );
+    assert(octree.node(Octree::Traits::LEFT_TOP_BACK) == nodes[2]);
+    assert(octree.node(Octree::Traits::RIGHT_TOP_BACK) == nodes[3]);
+    assert(octree.node(Octree::Traits::LEFT_BOTTOM_FRONT) == nodes[4]);
+    assert(octree.node(Octree::Traits::RIGHT_BOTTOM_FRONT) == nodes[5]);
+    assert(octree.node(Octree::Traits::LEFT_TOP_FRONT) == nodes[6]);
+    assert(octree.node(Octree::Traits::RIGHT_TOP_FRONT) == nodes[7]);
   }
 
   return EXIT_SUCCESS;

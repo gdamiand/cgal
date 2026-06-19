@@ -9,9 +9,9 @@ points defined on a regular grid, with a bilinear interpolation scheme
 over its cells (i.e.\ for each point `p` in a cell `c`, the
 vector value is interpolated from the vertices of `c`).
 
-\tparam StreamLinesTraits_2 has to instantiated by a model of the concept `StreamLinesTraits_2`.
+\tparam StreamLinesTraits_2 has to instantiated with a model of the concept `StreamLinesTraits_2`.
 
-\cgalModels `VectorField_2`
+\cgalModels{VectorField_2}
 
 \sa `Triangular_field_2<StreamLinesTraits_2>`
 

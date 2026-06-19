@@ -21,7 +21,7 @@
 
 
 #include <CGAL/basic.h>
-#include <CGAL/triangulation_assertions.h>
+#include <CGAL/assertions.h>
 #include <CGAL/Delaunay_triangulation_cell_base_3.h>
 
 namespace CGAL {
@@ -139,7 +139,7 @@ public:
         circumcenter_ = new Point(this->Cb::circumcenter(gt));
       } else {
         CGAL_expensive_assertion(
-          this->Cb::circumcenter(gt) == *circumcenter);
+          this->Cb::circumcenter(gt) == *circumcenter_);
       }
 
       return *circumcenter_;

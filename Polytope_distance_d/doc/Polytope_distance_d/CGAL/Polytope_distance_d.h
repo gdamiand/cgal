@@ -18,7 +18,7 @@ sets</I>, the
 points in \f$ S_P\f$ and \f$ S_Q\f$ are the <I>support points</I>. A pair of support
 sets has size at most \f$ d+2\f$ (by size we mean \f$ |S_P|+|S_Q|\f$). The distance
 between the two polytopes is <I>realized</I> by a pair of points \f$ p\f$ and
-\f$ q\f$ lying in the convex hull of \f$ S_P\f$ and \f$ S_Q\f$, repectively,
+\f$ q\f$ lying in the convex hull of \f$ S_P\f$ and \f$ S_Q\f$, respectively,
 i.e.\ \f$ \sqrt{||p-q||}=pd(P,Q)\f$. In general, neither the support sets nor the
 realizing points are necessarily unique.
 
@@ -83,7 +83,7 @@ typedef unspecified_type ET;
 
 /*!
 
-non-mutable model of the \stl concept <I>RandomAccessIterator</I>
+non-mutable model of the \stl concept `RandomAccessIterator`
 with value type `Point`. Used to access the points
 of the two polytopes.
 */
@@ -91,14 +91,14 @@ typedef unspecified_type Point_iterator;
 
 /*!
 
-non-mutable model of the \stl concept <I>RandomAccessIterator</I>
+non-mutable model of the \stl concept `RandomAccessIterator`
 with value type `Point`. Used to access the support points.
 */
 typedef unspecified_type Support_point_iterator;
 
 /*!
 
-non-mutable model of the \stl concept <I>RandomAccessIterator</I>
+non-mutable model of the \stl concept `RandomAccessIterator`
 with value type `int`. Used to access the indices of the
 support points in the provided input order (starting from 0
 in both point sets).
@@ -107,7 +107,7 @@ typedef unspecified_type Support_point_index_iterator;
 
 /*!
 
-non-mutable model of the \stl concept <I>RandomAccessIterator</I>
+non-mutable model of the \stl concept `RandomAccessIterator`
 with value type `ET`. Used to access the coordinates of
 the realizing points.
 */

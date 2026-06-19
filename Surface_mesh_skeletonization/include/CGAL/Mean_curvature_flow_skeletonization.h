@@ -234,8 +234,12 @@ public:
   typedef typename boost::graph_traits<mTriangleMesh>::edge_descriptor         edge_descriptor;
   typedef typename boost::graph_traits<mTriangleMesh>::edge_iterator           edge_iterator;
 
+  struct Less_id {
+    bool operator()(const edge_descriptor& x, const edge_descriptor& y) const { return x.id() < y.id(); }
+  };
+
   // Get weight from the weight interface.
-  typedef CGAL::Weights::Cotangent_weight<mTriangleMesh>                       Weight_calculator;
+  typedef CGAL::Weights::Cotangent_weight<mTriangleMesh, mVertexPointMap, Traits> Weight_calculator;
 
   typedef internal::Curve_skeleton<mTriangleMesh,
                                    VertexIndexMap,
@@ -269,9 +273,9 @@ private:
   /** Traits class. */
   Traits m_traits;
 
-  /** Controling the velocity of movement and approximation quality. */
+  /** Controlling the velocity of movement and approximation quality. */
   double m_omega_H;
-  /** Controling the smoothness of the medial approximation. */
+  /** Controlling the smoothness of the medial approximation. */
   double m_omega_P;
   /** Edges with length less than `min_edge_length` will be collapsed. */
   double m_min_edge_length;
@@ -340,7 +344,7 @@ double diagonal_length(const Bbox_3& bbox)
 double init_min_edge_length()
 {
   vertex_iterator vb, ve;
-  boost::tie(vb, ve) = vertices(m_tmesh);
+  std::tie(vb, ve) = vertices(m_tmesh);
   Vertex_to_point v_to_p(m_tmesh_point_pmap);
   Bbox_3 bbox = CGAL::bbox_3(boost::make_transform_iterator(vb, v_to_p),
                              boost::make_transform_iterator(ve, v_to_p));
@@ -383,17 +387,19 @@ public:
   Mean_curvature_flow_skeletonization(const TriangleMesh& tmesh,
                                       VertexPointMap vertex_point_map,
                                       const Traits& traits = Traits())
-    : m_traits(traits), m_weight_calculator(true /* use_clamped_version */)
+    :
+      m_tmesh(),
+      m_tmesh_point_pmap(get(CGAL::vertex_point, m_tmesh)),
+      m_traits(traits),
+      m_weight_calculator(m_tmesh, m_tmesh_point_pmap, m_traits, true /* use_clamped_version */)
   {
     init(tmesh, vertex_point_map);
   }
 
   Mean_curvature_flow_skeletonization(const TriangleMesh& tmesh,
                                       const Traits& traits = Traits())
-    : m_traits(traits), m_weight_calculator(true /* use_clamped_version */)
-  {
-    init(tmesh, get(vertex_point, tmesh));
-  }
+    : Mean_curvature_flow_skeletonization(tmesh, get(vertex_point, tmesh), traits)
+  { }
   #endif
   /// @} Constructor
 
@@ -522,6 +528,7 @@ public:
   /// after a number of `contract_geometry()`, keeping the specified
   /// vertices fixed in place.
   /// \tparam InputIterator a model of `InputIterator` with `boost::graph_traits<TriangleMesh>::%vertex_descriptor` as value type.
+  ///
   /// \cgalAdvancedEnd
   template<class InputIterator>
   void set_fixed_vertices(InputIterator begin, InputIterator end)
@@ -871,8 +878,8 @@ private:
     typedef std::pair<Input_vertex_descriptor, vertex_descriptor> Vertex_pair;
     std::vector<Vertex_pair> v2v;
     copy_face_graph(tmesh, m_tmesh,
-                    CGAL::parameters::vertex_to_vertex_output_iterator(
-                      std::back_inserter(v2v)).vertex_point_map(vpm));
+                    CGAL::parameters::vertex_to_vertex_output_iterator(std::back_inserter(v2v))
+                                     .vertex_point_map(vpm));
 
     // copy input vertices to keep correspondence
     for(const Vertex_pair& vp : v2v)
@@ -919,11 +926,9 @@ private:
   void compute_edge_weight()
   {
     m_edge_weight.clear();
-    m_edge_weight.reserve(2 * num_edges(m_tmesh));
+    m_edge_weight.reserve(num_halfedges(m_tmesh));
     for(halfedge_descriptor hd : halfedges(m_tmesh))
-    {
-      m_edge_weight.push_back(m_weight_calculator(hd, m_tmesh, m_tmesh_point_pmap));
-    }
+      m_edge_weight.push_back(m_weight_calculator(hd));
   }
 
   /// Assemble the left hand side.
@@ -1425,7 +1430,7 @@ std::size_t Mean_curvature_flow_skeletonization<TriangleMesh, Traits_, VertexPoi
 {
   std::size_t cnt=0, prev_cnt=0;
 
-  std::set<edge_descriptor> edges_to_collapse, non_topologically_valid_collapses;
+  std::set<edge_descriptor,Less_id> edges_to_collapse, non_topologically_valid_collapses;
 
   for(edge_descriptor ed : edges(m_tmesh))
     if ( edge_should_be_collapsed(ed) )

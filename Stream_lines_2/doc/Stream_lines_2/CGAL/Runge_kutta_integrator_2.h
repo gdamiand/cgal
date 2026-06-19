@@ -5,9 +5,9 @@ namespace CGAL {
 
 This class implements the second order Runge-Kutta integrator.
 
-\tparam VectorField_2 has to be instantiated by a model of the concept `VectorField_2`.
+\tparam VectorField_2 has to be instantiated with a model of the concept `VectorField_2`.
 
-\cgalModels `Integrator_2`
+\cgalModels{Integrator_2}
 
 \sa `Euler_integrator_2<VectorField_2>`
 

@@ -26,7 +26,7 @@ namespace CGAL {
   namespace Polygon_mesh_processing {
 
   /*!
-   * \ingroup PkgPolygonMeshProcessingRef
+   * \ingroup PMP_misc_grp
    *
    * computes a triangle for a face descriptor of a triangle mesh.
    *
@@ -65,6 +65,8 @@ triangle(typename boost::graph_traits<TriangleMesh>::face_descriptor fd,
 {
   using CGAL::parameters::choose_parameter;
   using CGAL::parameters::get_parameter;
+
+  CGAL_precondition(is_valid_face_descriptor(fd, tmesh));
 
   typename GetVertexPointMap<TriangleMesh, CGAL_NP_CLASS>::const_type
     vpm = choose_parameter(get_parameter(np, internal_np::vertex_point),

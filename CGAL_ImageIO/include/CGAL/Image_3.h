@@ -75,7 +75,7 @@ class CGAL_IMAGEIO_EXPORT Image_3
       if(!own_the_data && image != 0) {
         image->data = 0;
       }
-      ::_freeImage(image);
+      _freeImage(image);
     }
   };
 public:
@@ -87,7 +87,7 @@ public:
 protected:
   Image_shared_ptr image_ptr;
 
-   // implementation in src/CGAL_ImageIO/Image_3.cpp
+   // implementation in Image_3_impl.h
   bool private_read(_image* im, Own own_the_data = OWN_THE_DATA);
 
 public:
@@ -150,11 +150,15 @@ public:
   float ty() const { return image_ptr->ty; }
   float tz() const { return image_ptr->tz; }
 
+  float& tx(){ return image_ptr->tx; }
+  float& ty(){ return image_ptr->ty; }
+  float& tz(){ return image_ptr->tz; }
+
   float value(const std::size_t i,
               const std::size_t j,
               const std::size_t k) const
   {
-    return ::evaluate(image(),i,j,k);
+    return evaluate(image(),i,j,k);
   }
 
   bool is_valid() const
@@ -166,7 +170,7 @@ public:
 
   bool read(const char* file)
   {
-    return private_read(::_readImage(file));
+    return private_read(_readImage(file));
   }
 
   bool read(const std::string& file)
@@ -187,7 +191,7 @@ public:
                 SIGN sign = SGN_UNSIGNED
                 )
   {
-    return private_read(::_readImage_raw(file,
+    return private_read(_readImage_raw(file,
                                          rx,ry,rz,
                                          vx,vy,vz,offset,
                                          wdim, wk, sign));

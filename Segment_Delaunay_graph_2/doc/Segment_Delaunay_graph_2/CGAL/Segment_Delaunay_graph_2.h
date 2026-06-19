@@ -11,7 +11,7 @@ Currently it only supports the insertions of sites.
 \tparam Gt must be a model of `SegmentDelaunayGraphTraits_2`.
 
 \tparam St must be a model of `SegmentDelaunayGraphStorageTraits_2`.
-        By default, the storage traits is instantiated by `Segment_Delaunay_graph_storage_traits_2<Gt>`.
+        By default, the storage traits is instantiated with `Segment_Delaunay_graph_storage_traits_2<Gt>`.
 
 \tparam DS must be a model of `SegmentDelaunayGraphDataStructure_2` whose vertex and face are
         models of the concepts `SegmentDelaunayGraphVertexBase_2` and `TriangulationFaceBase_2`, respectively.
@@ -35,7 +35,7 @@ A segment Delaunay graph can be seen as a container of faces and
 vertices. Therefore the `Segment_Delaunay_graph_2` class provides several iterators
 and circulators that allow to traverse it (completely or partially).
 
-\cgalModels `DelaunayGraph_2`
+\cgalModels{DelaunayGraph_2}
 
 \sa `CGAL::Segment_Delaunay_graph_traits_2<K,MTag>`
 \sa `CGAL::Segment_Delaunay_graph_traits_without_intersections_2<K,MTag>`

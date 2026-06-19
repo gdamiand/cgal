@@ -14,7 +14,7 @@
 
 #include <CGAL/license/Alpha_wrap_3.h>
 
-#include <CGAL/Alpha_wrap_3/internal/Alpha_wrap_AABB_traits.h>
+#include <CGAL/Alpha_wrap_3/internal/Alpha_wrap_AABB_geom_traits.h>
 #include <CGAL/Alpha_wrap_3/internal/Oracle_base.h>
 #include <CGAL/Alpha_wrap_3/internal/splitting_helper.h>
 
@@ -37,7 +37,7 @@ namespace internal {
 template <typename GT_>
 struct TM_oracle_traits
 {
-  using Geom_traits = Alpha_wrap_AABB_traits<GT_>; // Wrap the kernel to add Ball_3 + custom Do_intersect_3
+  using Geom_traits = Alpha_wrap_AABB_geom_traits<GT_>; // Wrap the kernel to add Ball_3 + custom Do_intersect_3
 
   using Point_3 = typename Geom_traits::Point_3;
   using AABB_traits = typename AABB_tree_splitter_traits<Point_3, Geom_traits>::AABB_traits;
@@ -130,30 +130,35 @@ public:
     using VPM = typename GetVertexPointMap<TriangleMesh>::const_type;
     using Point_ref = typename boost::property_traits<VPM>::reference;
 
+#ifdef CGAL_AW3_DEBUG
+    std::cout << "Insert into AABB tree (" << faces(tmesh).size() << " faces)..." << std::endl;
+#endif
+
     CGAL_precondition(CGAL::is_triangle_mesh(tmesh));
 
     if(is_empty(tmesh))
     {
 #ifdef CGAL_AW3_DEBUG
-      std::cout << "Warning: Input is empty " << std::endl;
+      std::cout << "Warning: Input is empty (TM)" << std::endl;
 #endif
       return;
     }
 
-#ifdef CGAL_AW3_DEBUG
-    std::cout << "Insert into AABB tree (faces)..." << std::endl;
-#endif
-
     VPM vpm = choose_parameter(get_parameter(np, internal_np::vertex_point),
                                get_const_property_map(vertex_point, tmesh));
-    CGAL_static_assertion((std::is_same<typename boost::property_traits<VPM>::value_type, Point_3>::value));
+    static_assert(std::is_same<typename boost::property_traits<VPM>::value_type, Point_3>::value);
 
     Splitter_base::reserve(num_faces(tmesh));
 
     for(face_descriptor f : faces(tmesh))
     {
       if(Polygon_mesh_processing::is_degenerate_triangle_face(f, tmesh, np))
+      {
+#ifdef CGAL_AW3_DEBUG
+        std::cerr << "Warning: ignoring degenerate face " << f << std::endl;
+#endif
         continue;
+      }
 
       const Point_ref p0 = get(vpm, source(halfedge(f, tmesh), tmesh));
       const Point_ref p1 = get(vpm, target(halfedge(f, tmesh), tmesh));
@@ -164,8 +169,14 @@ public:
       Splitter_base::split_and_insert_datum(tr, this->tree(), this->geom_traits());
     }
 
+    // Manually constructing it here purely for profiling reasons: if we keep the lazy approach,
+    // it will be done at the first treatment of a facet that needs a Steiner point.
+    // So if one wanted to bench the flood fill runtime, it would be skewed by the time it takes
+    // to accelerate the tree.
+    this->tree().accelerate_distance_queries();
+
 #ifdef CGAL_AW3_DEBUG
-    std::cout << "Tree: " << this->tree().size() << " primitives (" << num_faces(tmesh) << " faces in input)" << std::endl;
+    std::cout << "Tree: " << this->tree().size() << " primitives" << std::endl;
 #endif
   }
 };

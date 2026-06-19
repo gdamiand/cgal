@@ -32,9 +32,11 @@ of the concept `RegularTriangulationFaceBase_2` , which refines
 the concept `TriangulationFaceBase_2` by adding
 in the face a list to store hidden vertices.
 
-\cgalRefines `TriangulationFaceBase_2`
+\cgalRefines{TriangulationFaceBase_2}
 
-\cgalHasModel `CGAL::Regular_triangulation_face_base_2`
+\cgalHasModelsBegin
+\cgalHasModels{CGAL::Regular_triangulation_face_base_2}
+\cgalHasModelsEnd
 
 \sa `TriangulationFaceBase_2`
 \sa `RegularTriangulationVertexBase_2`
@@ -58,7 +60,7 @@ typedef std::list<Vertex_handle> Vertex_list;
 /// @{
 
 /*!
-Returns a reference to the list of vertices hidden by the face.
+returns a reference to the list of vertices hidden by the face.
 */
 Vertex_list& vertex_list();
 

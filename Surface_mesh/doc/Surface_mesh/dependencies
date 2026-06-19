@@ -4,11 +4,12 @@ Algebraic_foundations
 BGL
 Box_intersection_d
 Circulator
+Convex_hull_3
 HalfedgeDS
 Kernel_23
 Miscellany
 Polyhedron
 Polygon_mesh_processing
+PMP_Mesh_repair
 STL_Extension
 Stream_support
-

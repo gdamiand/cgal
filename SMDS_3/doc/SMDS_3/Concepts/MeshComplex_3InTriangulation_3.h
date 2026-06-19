@@ -42,7 +42,9 @@ the current approximation of each subdomain
 and each boundary surface patch.
 The data structure encodes the final mesh at the end of the meshing process.
 
-\cgalHasModel `CGAL::Mesh_complex_3_in_triangulation_3<Tr,CornerIndex,CurveIndex>`
+\cgalHasModelsBegin
+\cgalHasModels{CGAL::Mesh_complex_3_in_triangulation_3<Tr,CornerIndex,CurveIndex>}
+\cgalHasModelsEnd
 
 \sa `MeshDomain_3`
 \sa `MeshComplexWithFeatures_3InTriangulation_3`
@@ -350,7 +352,7 @@ Facets_in_complex_iterator facets_in_complex_end();
 
 /*!
 Returns a `Facet_in_complex_iterator` to visit the facets
-of the triangulation which which belong to the approximation of surface patch of index `index`.
+of the triangulation which belong to the approximation of surface patch of index `index`.
 */
 Facets_in_complex_iterator facets_in_complex_begin(Surface_patch_index index);
 

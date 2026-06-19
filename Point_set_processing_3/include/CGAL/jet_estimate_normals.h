@@ -22,7 +22,7 @@
 #include <CGAL/for_each.h>
 #include <CGAL/Monge_via_jet_fitting.h>
 #include <CGAL/property_map.h>
-#include <CGAL/point_set_processing_assertions.h>
+#include <CGAL/assertions.h>
 #include <CGAL/Memory_sizer.h>
 #include <functional>
 
@@ -196,8 +196,8 @@ jet_estimate_normals(
   typedef typename Kernel::FT FT;
   typedef typename GetSvdTraits<NamedParameters>::type SvdTraits;
 
-  CGAL_static_assertion_msg(NP_helper::has_normal_map(), "Error: no normal map");
-  CGAL_static_assertion_msg(!(std::is_same<SvdTraits,
+  CGAL_assertion_msg(NP_helper::has_normal_map(points, np), "Error: no normal map");
+  static_assert(!(std::is_same<SvdTraits,
                               typename GetSvdTraits<NamedParameters>::NoTraits>::value),
                             "Error: no SVD traits");
 
@@ -206,8 +206,7 @@ jet_estimate_normals(
   unsigned int degree_fitting = choose_parameter(get_parameter(np, internal_np::degree_fitting), 2);
   FT neighbor_radius = choose_parameter(get_parameter(np, internal_np::neighbor_radius), FT(0));
 
-  const std::function<bool(double)>& callback = choose_parameter(get_parameter(np, internal_np::callback),
-                                                               std::function<bool(double)>());
+  const std::function<bool(double)>& callback = choose_parameter<std::function<bool(double)>>(get_parameter(np, internal_np::callback));
 
   // types for K nearest neighbors search structure
   typedef Point_set_processing_3::internal::Neighbor_query<Kernel, PointRange&, PointMap> Neighbor_query;
@@ -215,10 +214,10 @@ jet_estimate_normals(
   // precondition: at least one element in the container.
   // to fix: should have at least three distinct points
   // but this is costly to check
-  CGAL_point_set_processing_precondition(points.begin() != points.end());
+  CGAL_precondition(points.begin() != points.end());
 
   // precondition: at least 2 nearest neighbors
-  CGAL_point_set_processing_precondition(k >= 2 || neighbor_radius > FT(0));
+  CGAL_precondition(k >= 2 || neighbor_radius > FT(0));
 
   std::size_t memory = CGAL::Memory_sizer().virtual_size();
   CGAL_TRACE_STREAM << (memory >> 20) << " Mb allocated\n";

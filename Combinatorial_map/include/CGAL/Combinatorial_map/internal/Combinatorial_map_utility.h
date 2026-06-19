@@ -172,7 +172,7 @@ namespace CGAL
     };
 
     //count the number of time a given type have been found
-    //within a tuple, until reaching position the k'th type of the tuple.
+    //within a tuple, until reaching position the k-th type of the tuple.
     //dim is the total size of the tuple
     template <class Type,int k,class T,
               int dim=CGAL::internal::My_length<T>::value-1>
@@ -204,7 +204,7 @@ namespace CGAL
     };
 
     //count the number of time a type different from Type have been found
-    //within a tuple, until reaching position the k'th type of the tuple.
+    //within a tuple, until reaching position the k-th type of the tuple.
     //dim is the total size of the tuple
     template <class Type, int k,class T,
               int dim=CGAL::internal::My_length<T>::value-1>
@@ -352,32 +352,33 @@ namespace CGAL
     };
 
     //Same as Foreach_static excepted that Functor
-    //is called for case k only if the k'th type in the tuple
+    //is called for case k only if the k-th type in the tuple
     //is different from Void. Note that to the converse of Foreach_static
     //Functor are called from n =0 to k
-    template <class Functor,class T,int n=0>
+    template <class Functor,class T,int n=0, int startn=0>
     struct Foreach_static_restricted;
 
-    template <class Functor,class Head, class ... Items,int n>
+    template <class Functor,class Head, class ... Items,int n, int startn>
     struct Foreach_static_restricted<Functor,
-                                     std::tuple<Head,Items...>,n>
+                                     std::tuple<Head,Items...>,n, startn>
     {
       template <class  ... T>
       static void run(T& ... t){
-        Conditionnal_run<Functor,n,Head>::run(t...);
+        if(n>=startn)
+        { Conditionnal_run<Functor,n,Head>::run(t...); }
         Foreach_static_restricted
-          <Functor,std::tuple<Items...>,n+1>::run(t...);
+          <Functor,std::tuple<Items...>, n+1, startn>::run(t...);
       }
     };
 
-    template <class Functor,int n>
-    struct Foreach_static_restricted<Functor,std::tuple<>,n>{
+    template <class Functor,int n, int startn>
+    struct Foreach_static_restricted<Functor,std::tuple<>,n, startn>{
       template <class  ... T>
       static void run(T& ... ){}
     };
 
     //Same as Foreach_static_restricted excepted that Functor
-    //is called for case k only if the k'th type in the tuple
+    //is called for case k only if the k-th type in the tuple
     //is different from Void and k!=j.
     template <class Functor,int j,class T,int n=0>
     struct Foreach_static_restricted_except;
@@ -545,7 +546,7 @@ namespace CGAL
       struct Attribute_type<d,0>
       { typedef Void type; };
 
-      // Helper class allowing to retreive the d-cell-descriptor attribute
+      // Helper class allowing to retrieve the d-cell-descriptor attribute
       template<int d, class Type=typename Attribute_type<d>::type,
                typename WithIndex=typename CMap::Use_index>
       struct Attribute_descriptor
@@ -562,7 +563,7 @@ namespace CGAL
       struct Attribute_descriptor<d, CGAL::Void, CGAL::Tag_true>
       { typedef typename CMap::Dart_index type; };
 
-      // Helper class allowing to retreive the d-cell-const descriptor attribute
+      // Helper class allowing to retrieve the d-cell-const descriptor attribute
       template<int d, class Type=typename Attribute_type<d>::type>
       struct Attribute_const_descriptor
       {
@@ -574,7 +575,7 @@ namespace CGAL
       struct Attribute_const_descriptor<d, CGAL::Void>
       { typedef CGAL::Void* type; };
 
-      // Helper class allowing to retreive the d-cell-iterator attribute
+      // Helper class allowing to retrieve the d-cell-iterator attribute
       template<int d, class Type=typename Attribute_type<d>::type>
       struct Attribute_iterator
       {
@@ -586,7 +587,7 @@ namespace CGAL
       struct Attribute_iterator<d, CGAL::Void>
       { typedef CGAL::Void* type; };
 
-      // Helper class allowing to retreive the d-cell-const descriptor attribute
+      // Helper class allowing to retrieve the d-cell-const descriptor attribute
       template<int d, class Type=typename Attribute_type<d>::type>
       struct Attribute_const_iterator
       {
@@ -598,7 +599,7 @@ namespace CGAL
       struct Attribute_const_iterator<d, CGAL::Void>
       { typedef CGAL::Void* type; };
 
-      // Helper class allowing to retreive the d-cell-attribute range
+      // Helper class allowing to retrieve the d-cell-attribute range
       template<int d, class Type=typename Attribute_type<d>::type>
       struct Attribute_range
       {
@@ -610,7 +611,7 @@ namespace CGAL
       struct Attribute_range<d, CGAL::Void>
       { typedef CGAL::Void type; };
 
-      // Helper class allowing to retreive the d-cell-attribute const range
+      // Helper class allowing to retrieve the d-cell-attribute const range
       template<int d, class Type=typename Attribute_type<d>::type>
       struct Attribute_const_range
       {
@@ -622,13 +623,13 @@ namespace CGAL
       struct Attribute_const_range<d, CGAL::Void>
       { typedef CGAL::Void type; };
 
-      // To iterate onto each enabled attributes
-      template <class Functor>
+      // To iterate onto each enabled attributes, starting from startn-attributes (0 by default)
+      template <class Functor, int startn=0>
       struct Foreach_enabled_attributes
       {
         template <class ...Ts>
         static void run(Ts& ... t)
-        { Foreach_static_restricted<Functor, Attributes>::run(t...); }
+        { Foreach_static_restricted<Functor, Attributes, 0, startn>::run(t...); }
       };
       // To iterate onto each enabled attributes, except j-attributes
       template <class Functor, unsigned int j>

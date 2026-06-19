@@ -1,12 +1,15 @@
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Polygon_mesh_processing/compute_normal.h>
+#include <CGAL/boost/graph/named_params_helper.h>
+#include <CGAL/Named_function_parameters.h>
+
 #include <CGAL/Surface_mesh.h>
+
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+
 #include <sstream>
 #include <iostream>
 #include <unordered_map>
 
-#include <CGAL/boost/graph/named_params_helper.h>
-#include <CGAL/Named_function_parameters.h>
-#include <CGAL/Polygon_mesh_processing/compute_normal.h>
 
 namespace CGAL {
 template <class PolygonMesh,
@@ -60,7 +63,7 @@ void my_function_with_named_parameters(PolygonMesh& mesh, const NamedParameters&
   // check is a parameter has been given by the user
   constexpr bool do_project_is_default = is_default_parameter<NamedParameters, internal_np::do_project_t>::value;
 
-  VCM vcm_np = choose_parameter(get_parameter(np, internal_np::vertex_is_constrained), Default_VCM());
+  VCM vcm_np = choose_parameter<Default_VCM>(get_parameter(np, internal_np::vertex_is_constrained));
 
 
   //demonstrates usage for those values.

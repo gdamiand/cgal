@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # Copyright (c) 2012 GeometryFactory (France). All rights reserved.
 # All rights reserved.
-# 
+#
 # This file is part of CGAL (www.cgal.org).
-# 
+#
 # $URL$
 # $Id$
 # SPDX-License-Identifier: GPL-3.0-or-later
@@ -74,7 +74,7 @@ body  {color: black; background-color: #C0C0D0; font-family: sans-serif;}
 </head><body>
 <h1 id="maintitle">Doxygen Manual Results</h1>'''
     page_footer='''<table border="1" cellspacing="2" cellpadding="5" class="test-results">
-    <tr><td/><th colspan="3">Doxygen 1.8.4</th><th colspan="3">Doxygen 1.8.13(official)</th><th colspan="3">Doxygen master</th></tr>
+    <tr><td/><th colspan="3">Doxygen 1.9.6(patched)</th><th colspan="3">Doxygen 1.17.0(patched)</th><th colspan="3">Doxygen master</th></tr>
 <tr>
 <th>Package Name</th>
 <th>Logs </th>
@@ -97,7 +97,7 @@ body  {color: black; background-color: #C0C0D0; font-family: sans-serif;}
       suffix = ''
       if args.doxygen_version2:
         suffix = args.doxygen_version2
-      link2="\n<br><a href=\"output2/Manual/index.html\">Documentation built</a> with <a href=\"https://github.com/CGAL/doxygen\">our fork of Doxygen {_suffix} (used for the official CGAL documentation)</a>\n".format(_suffix=suffix) 
+      link2="\n<br><a href=\"output2/Manual/index.html\">Documentation built</a> with <a href=\"https://github.com/CGAL/doxygen\">our fork of Doxygen {_suffix} (used for the official CGAL documentation)</a>\n".format(_suffix=suffix)
       suffix = ''
       if args.master_describe:
         suffix=args.master_describe
@@ -151,32 +151,53 @@ body  {color: black; background-color: #C0C0D0; font-family: sans-serif;}
           result = [('./build_logs', './build_logs', (0,1))]
           results_master.extend(result)
     for index in range(0, len(results1)):
-        status='class="package-good"'
+        status='package-good'
+        status_1='package-good'
+        status_2='package-good'
+        status_master='package-good'
         no_errors = True
         no_warn = True
-        for res_list in [results1, results2, results_master]:
-          if res_list[index][2][0] != 0 and res_list[index][2][1] == 0:
-             no_warn = False
-          elif res_list[index][2][1] != 0:
-             no_errors = False
+
+        if results1[index][2][0] != 0 and results1[index][2][1] == 0:
+           no_warn = False
+           status_1='package-warnings'
+        elif results1[index][2][1] != 0:
+           no_errors = False
+           status_1='package-error'
+
+        if results2[index][2][0] != 0 and results2[index][2][1] == 0:
+           no_warn = False
+           status_2='package-warnings'
+        elif results2[index][2][1] != 0:
+           no_errors = False
+           status_2='package-error'
+
+        if results_master[index][2][0] != 0 and results_master[index][2][1] == 0:
+           no_warn = False
+           status_master='package-warnings'
+        elif results_master[index][2][1] != 0:
+           no_errors = False
+           status_master='package-error'
+
         if not no_warn and no_errors :
-            status='class="package-warnings"'
+            status='package-warnings'
         elif not no_errors:
-            status='class="package-error"'
+            status='package-error'
 
 
-        new_row='''<tr {status}>
-<td><a class="name" >{pretty_name}</a></td>
-<td><a class="logs1" href="logs1/{basename1}">Logs</a></td>
-<td class="warn-count1">{warn_count1}
-</td><td class="error-count1">{err_count1}</td>
-<td><a class="logs2" href="logs2/{basename2}">Logs</a></td>
-<td class="warn-count2">{warn_count2}
-</td><td class="error-count2">{err_count2}</td>
-<td><a class="logs_master" href="logs_master/{basename_master}">Logs</a></td>
-<td class="warn-count_master">{warn_count_master}
-</td><td class="error-count_master">{err_count_master}</td></tr>'''.format(
-status=status,
+        new_row='''<tr>
+<td class="{status}"><a class="name" >{pretty_name}</a></td>
+<td class="{status_1}"><a class="logs1" href="logs1/{basename1}">Logs</a></td>
+<td class="warn-count1 {status_1}">{warn_count1}</td>
+<td class="error-count1 {status_1}">{err_count1}</td>
+<td class="{status_2}"><a class="logs2" href="logs2/{basename2}">Logs</a></td>
+<td class="warn-count2 {status_2}">{warn_count2}</td>
+<td class="error-count2 {status_2}">{err_count2}</td>
+<td class="{status_master}"><a class="logs_master" href="logs_master/{basename_master}">Logs</a></td>
+<td class="warn-count_master {status_master}">{warn_count_master}</td>
+<td class="error-count_master {status_master}">{err_count_master}</td>
+</tr>'''.format(
+status=status,status_1=status_1,status_2=status_2,status_master=status_master,
 pretty_name=results1[index][1],
 basename1=results1[index][0],basename2=results2[index][0],basename_master=results_master[index][0],
 warn_count1=str(results1[index][2][0]),warn_count2=str(results2[index][2][0]),warn_count_master=str(results_master[index][2][0]),
@@ -205,9 +226,9 @@ def main():
     parser.add_argument('--doxygen-version1', default ='', help='Specify this argument if you want to add a version number to the name of the link to the first documentation.')
     parser.add_argument('--doxygen-version2', default ='', help='Specify this argument if you want to add a version number to the name of the link to the second documentation.')
     parser.add_argument('--master-describe', default ='', help='Specify this argument if you want to add a suffix to the name of the link to the doxygen master documentation.')
-    
+
     args = parser.parse_args()
-    
+
     if args.cgal_version:
       version_string="CGAL-"+args.cgal_version
       version_date=datetime.datetime.now().strftime("%Y-%m-%d")
@@ -255,7 +276,7 @@ def main():
         try:
             with open(publish_dir + 'index.html') as f: pass
         except IOError as e:
-            print('No index.html in the publish directory found. Writing a skeleton.')               
+            print('No index.html in the publish directory found. Writing a skeleton.')
             with open(publish_dir + 'index.html', 'w') as f:
                 f.write('''<!DOCTYPE html>
 <style type="text/css">
@@ -267,10 +288,10 @@ body  {color: black; background-color: #C0C0D0; font-family: sans-serif;}
 <html><head><title>Manual Testsuite Overview</title></head>
 <body><h1>Overviewpage of the Doxygen Manual Testsuite</h1>
 <table border="1" cellspacing="2" cellpadding="5" id="revisions" class="rev-table">
-  <tr><td/><td/><th colspan="2">Doxygen 1.8.4</th><th colspan="2">Doxygen 1.8.13</th><th colspan="2">Doxygen master</th><td/><td/></tr>
+  <tr><td/><td/><th colspan="2">Doxygen 1.9.6</th><th colspan="2">Doxygen 1.17.0</th><th colspan="2">Doxygen master</th><td/><td/></tr>
 <tr><th>Revision</th><th>Date</th><th>Warnings</th>
 <th>Errors</th><th>Warnings </th><th>Errors</th><th>Warnings </th><th>Errors </th>
-<th>Diff with doxygen master</th><th>Diff with doxygen 1.8.13</th></tr></table></body>''')
+<th>Diff with doxygen master</th><th>Diff with doxygen 1.9.6</th></tr></table></body>''')
                 args_list=''
                 for arg in sys.argv[0:]:
                   args_list+=arg+' '
@@ -361,6 +382,6 @@ body  {color: black; background-color: #C0C0D0; font-family: sans-serif;}
         except:
           sys.stderr.write("Error while writing to "+log_target+". Does it already exists?\n")
           raise
-        
+
 if __name__ == "__main__":
     main()

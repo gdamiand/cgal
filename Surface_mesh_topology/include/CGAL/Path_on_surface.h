@@ -36,7 +36,7 @@
 // opposite of this dart if m_flip[n-1] is true i.e. if m_flip[i] is true means
 // that the i-th dart m_path[i] has to be flipped.
 // We use flips because sometimes opposite darts doesn't exist on surfaces with
-// boundaries. But if m_flip[i] is true doesn't necesary mean that
+// boundaries. But if m_flip[i] is true doesn't necessary mean that
 // m_path[i] is 2-free
 
 namespace CGAL {
@@ -292,7 +292,7 @@ public:
   }
 
   /// Add the given dart at the end of this path.
-  /// @pre can_be_pushed(dh)
+  /// @pre \link can_be_pushed `can_be_pushed(dh)`\endlink
   void push_back(Dart_const_descriptor dh, bool flip=false,
                  bool update_isclosed=true)
   {
@@ -423,7 +423,7 @@ public:
   /// Debugging method.
   void display_failed_extention(const std::string& /*name_of_function*/)
   {
-    // std::cout<<"Cant extend the path this way ("<<name_of_function<<")"
+    // std::cout<<"Can't extend the path this way ("<<name_of_function<<")"
     //          <<std::endl;
   }
 

@@ -17,7 +17,7 @@
 #include <CGAL/license/Polygon_mesh_processing/collision_detection.h>
 
 #include <CGAL/AABB_tree.h>
-#include <CGAL/AABB_traits.h>
+#include <CGAL/AABB_traits_3.h>
 #include <CGAL/Polygon_mesh_processing/internal/AABB_traversal_traits_with_transformation.h>
 #include <CGAL/Polygon_mesh_processing/internal/Side_of_triangle_mesh/Point_inside_vertical_ray_cast.h>
 #include <CGAL/Polygon_mesh_processing/connected_components.h>
@@ -37,24 +37,25 @@
 namespace CGAL {
 
 /*!
- * \ingroup PkgPolygonMeshProcessingRef
+ * \ingroup PMP_intersection_grp
+ *
  * This class provides methods to perform some intersection tests between triangle meshes
  * that undergo affine transformations (rotation, translation, and scaling).
  * Meshes are added to an internal set and are referenced using an id assigned when added to the set.
  * Note that the exact predicate framework applies on the meshes after having applied the transformation
  * to the coordinates of the points of the vertices of each mesh.
  *
- * @tparam TriangleMesh a model of `HalfedgeListGraph` and `FaceListGraph`
+ * @tparam TriangleMesh a model of `VertexListGraph`, `HalfedgeListGraph`, and `FaceListGraph`
  * @tparam VertexPointMap a model of `ReadablePropertyMap` with the vertex descriptor of `TriangleMesh` as key type,
- *                        and a point from a CGAL Kernel as value type. %Default is the internal point property map
- *                        of `TriangleMesh` if it exists.
+ *                        and a point from a \cgal kernel as value type. %Default is the internal point property map
+ *                        of `TriangleMesh`, if it exists.
  * @tparam Kernel a model of CGAL Kernel. %Default is the kernel of the value type of `VertexPointMap` retrieved using
  *                `Kernel_traits`.
  * @tparam AABBTree an `AABB_tree` that can containing faces of `TriangleMesh`. %Default is using `AABB_traits` with
  *                       `AABB_face_graph_triangle_primitive` as primitive type.
- * @tparam Has_rotation tag indicating whether the transformations applied to meshes may contain rotations (`Tag_true`)
- *                      or if only translations and scalings are applied (`Tag_false`). Some optimizations are
- *                      switch on in case there are no rotations.
+ * @tparam Has_rotation tag indicating whether the transformations applied to meshes may contain rotations (\link Tag_true `Tag_true`\endlink)
+ *                      or if only translations and scalings are applied (\link Tag_false `Tag_false`\endlink). Some optimizations are
+ *                      switched on in case there are no rotations.
  */
 template <class TriangleMesh,
           class VertexPointMap = Default,
@@ -76,7 +77,7 @@ class Rigid_triangle_mesh_collision_detection
 // AABB-tree type
   typedef AABB_face_graph_triangle_primitive<TriangleMesh,
                                              Vpm>             Default_primitive;
-  typedef AABB_traits<K, Default_primitive>                 Default_tree_traits;
+  typedef AABB_traits_3<K, Default_primitive>               Default_tree_traits;
   typedef CGAL::AABB_tree<Default_tree_traits>                     Default_tree;
   typedef typename Default::Get<AABBTree, Default_tree>::type              Tree;
   typedef typename Tree::AABB_traits                                Tree_traits;
@@ -217,8 +218,6 @@ public:
   *
   * @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
   *
-  * \return the id of `tm` used to refer to that mesh.
-  *
   * @param tm triangulated surface mesh to add
   * @param np an optional sequence of \ref bgl_namedparameters "Named Parameters" among the ones listed below
   *
@@ -243,6 +242,8 @@ public:
   *     \cgalParamDefault{`true`}
   *   \cgalParamNEnd
   * \cgalNamedParamsEnd
+  *
+  * \return the id of `tm` used to refer to that mesh.
   */
   template <class NamedParameters = parameters::Default_named_parameters>
   std::size_t add_mesh(const TriangleMesh& tm,
@@ -250,7 +251,7 @@ public:
   {
     // handle vpm
     typedef typename CGAL::GetVertexPointMap<TriangleMesh, NamedParameters>::const_type Local_vpm;
-    CGAL_static_assertion( (std::is_same<Local_vpm,Vpm>::value) );
+    static_assert(std::is_same<Local_vpm,Vpm>::value);
 
     Vpm vpm =
       parameters::choose_parameter(parameters::get_parameter(np, internal_np::vertex_point),
@@ -260,7 +261,7 @@ public:
     CGAL_assertion( m_aabb_trees[id] == nullptr );
     m_is_closed[id] = is_closed(tm);
     m_own_aabb_trees[id] = true;
-    Tree* t = new Tree(boost::begin(faces(tm)), boost::end(faces(tm)), tm, vpm);
+    Tree* t = new Tree(std::begin(faces(tm)), std::end(faces(tm)), tm, vpm);
     t->build();
     m_aabb_trees[id] = t;
     m_traversal_traits[id] = Traversal_traits(m_aabb_trees[id]->traits());
@@ -274,8 +275,6 @@ public:
   * \warning The tree is not copied and the lifetime of `tree` must be longer than that of this class.
   *
   * @tparam NamedParameters a sequence of \ref bgl_namedparameters "Named Parameters"
-  *
-  * \return the id of `tm` used to refer to that mesh.
   *
   * @param tree an AABB-tree of faces of a mesh
   * @param tm triangulated surface mesh
@@ -302,6 +301,8 @@ public:
   *     \cgalParamDefault{`true`}
   *   \cgalParamNEnd
   * \cgalNamedParamsEnd
+  *
+  * \return the id of `tm` used to refer to that mesh.
   */
   template <class NamedParameters = parameters::Default_named_parameters>
   std::size_t add_mesh(const AABB_tree& tree, const TriangleMesh& tm, const NamedParameters& np = parameters::default_values())
@@ -345,7 +346,9 @@ public:
  /*!
   * returns a vector of the ids of meshes within `ids` that have at least a face
   * intersecting a face of the mesh with id `mesh_id`.
-  * If `mesh_id` is in `ids` it is not reported.
+  *
+  * If `mesh_id` is in `ids`, it is not reported.
+  *
   * \tparam MeshIdRange a range of ids convertible to `std::size_t`.
   */
   template <class MeshIdRange>
@@ -562,7 +565,7 @@ public:
         parameters::get_parameter(np, internal_np::apply_per_connected_component), true);
 
     typedef typename CGAL::GetVertexPointMap<TriangleMesh, NamedParameters>::const_type Local_vpm;
-    CGAL_static_assertion((std::is_same<Local_vpm,Vpm>::value));
+    static_assert(std::is_same<Local_vpm,Vpm>::value);
 
     Vpm vpm =
       parameters::choose_parameter(parameters::get_parameter(np, internal_np::vertex_point),
@@ -579,7 +582,7 @@ public:
 
       std::size_t nb_cc =
         Polygon_mesh_processing::connected_components(
-          tm, bind_property_maps(fid_map, make_property_map(cc_ids)),
+          tm, make_compose_property_map(fid_map, make_property_map(cc_ids)),
           parameters::face_index_map(fid_map));
       if (nb_cc != 1)
       {
@@ -600,20 +603,20 @@ public:
       }
     }
     // only one CC
-    points.push_back( get(vpm, *boost::begin(vertices(tm))) );
+    points.push_back( get(vpm, *std::begin(vertices(tm))) );
   }
 
  /*!
   * adds an instance of a triangulated surface mesh using an external tree of its faces.
   * \warning The tree is not copied and the lifetime of `tree` must be longer than that of this class.
   *
-  * \return the id of the instance used to refer to that mesh.
-  *
   * @param tree an AABB-tree of faces of a mesh
   * @param is_closed `true` is the mesh in `tree` is closed, and `false` otherwise.
   *                  \link is_closed() `CGAL::is_closed()` \endlink can be used for that purpose.
   * @param points_per_cc a vector containing one point of a vertex for each connected
   *                      component of the triangle surface mesh in `tree`
+  *
+  * \return the id of the instance used to refer to that mesh.
   */
   std::size_t add_mesh(const AABB_tree& tree,
                        bool is_closed,

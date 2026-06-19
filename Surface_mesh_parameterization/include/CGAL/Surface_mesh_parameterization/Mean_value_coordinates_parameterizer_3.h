@@ -49,7 +49,7 @@ namespace Surface_mesh_parameterization {
 ///   for `j` neighbor vertex of `i` based on Floater Mean Value Coordinates parameterization.
 /// - It implements an optimized version of `is_one_to_one_mapping()`.
 ///
-/// \cgalModels `Parameterizer_3`
+/// \cgalModels{Parameterizer_3}
 ///
 /// \tparam TriangleMesh_ must be a model of `FaceGraph`.
 ///
@@ -206,7 +206,7 @@ protected:
     ++next_vertex_v_l;
     const Point_3& position_v_l = get(ppmap, *next_vertex_v_l);
 
-    return CGAL::Weights::tangent_weight(position_v_k, position_v_j, position_v_l, position_v_i) / NT(2);
+    return CGAL::Weights::tangent_weight(position_v_l, position_v_j, position_v_k, position_v_i) / NT(2);
   }
 };
 

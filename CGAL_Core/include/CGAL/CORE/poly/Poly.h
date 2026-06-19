@@ -36,7 +36,7 @@
  * Author: Chee Yap
  * Date:   May 28, 2002
  *
- * WWW URL: http://cs.nyu.edu/exact/
+ * WWW URL: https://cs.nyu.edu/exact/
  * Email: exact@cs.nyu.edu
  *
  * $URL$
@@ -48,6 +48,7 @@
 #define CORE_POLY_H
 
 #include <CGAL/CORE/BigFloat.h>
+#include <CGAL/CORE/BigRat.h>
 #include <CGAL/CORE/Promote.h>
 #include <vector>
 #include <CGAL/assertions.h>
@@ -84,7 +85,7 @@ public:
 
   int degree;        // This is the nominal degree (an upper bound
   // on the true degree)
-  NT * coeff;        // coeff is an array of size degree+1;
+  std::vector<NT> coeff;        // coeff is an array of size degree+1;
   //        This remark holds even when degree = -1.
   // Notes:
   // (1) coeff[i] is the coefficient of x^i
@@ -165,7 +166,7 @@ public:
   NT getCoeffi(int i) const;
   const NT & getLeadCoeff() const;      // get TRUE leading coefficient
   const NT & getTailCoeff() const;      // get last non-zero coefficient
-  NT** getCoeffs() ;                // get all coefficients
+  NT* getCoeffs() ;                     // get all coefficients
   const NT& getCoeff(int i) const;      // Get single coefficient of X^i
                                         // nullptr pointer if invalid i
   // Set functions
@@ -196,12 +197,10 @@ public:
   /// In particular, if the value is 0, we return 0.
   /// @param oldMSB is any estimate of the negative log of the evaluation
   BigFloat evalExactSign(const BigFloat& val, const extLong& oldMSB=54) const;
+
   /// Polynomial evaluation that return the same type as its argument
-  /// Caution: The type T must be greater or equal to the type NT
-  ///         NOTE: Eventually, we will remove this restriction by
-  ///         introduce MaxType(NT,T) for the return type.
   template <class T>
-  MAX_TYPE(NT, T) eval(const T&) const;
+  CORE_MAX_TYPE(NT, T) eval(const T&) const;
 
   // Bounds
   BigFloat CauchyUpperBound() const;  // Cauchy Root Upper Bound
@@ -390,11 +389,14 @@ const NT & Polynomial<NT>::getTailCoeff() const {
   return *zero;
 }
 
+
 template < class NT >
 CORE_INLINE
-NT** Polynomial<NT>::getCoeffs() {
-  return &coeff;
+NT* Polynomial<NT>::getCoeffs() {
+  return coeff.data();
 }
+
+
 template < class NT >
 CORE_INLINE
 const NT& Polynomial<NT>::getCoeff(int i) const {

@@ -13,32 +13,18 @@ operations `intersection`, `union`, `difference`, `complement` and
 under the topological operations `boundary`, `closure`, and
 `interior`.
 
-\cgalHeading{Parameters}
-
-\code
-template< class Nef_polyhedronTraits_S2,
-          class Nef_polyhedronItems_S2 = CGAL::SM_items,
-          class Nef_polyhedronMarks = bool >
-class Nef_polyhedron_S2;
-\endcode
-
-The first parameter requires one of the following exact kernels:
+\tparam Traits one of the following exact kernels:
 `Homogeneous`, `Simple_homogeneous`
 parametrized with `Gmpz`, `leda_integer` or any other number type
 modeling \f$\mathbb{Z}\f$, or `Cartesian`, `Simple_cartesian` parametrized with
 `Gmpq`, `leda_rational`, `Quotient<Gmpz>` or any other number
 type modeling \f$\mathbb{Q}\f$.
 
-The second parameter and the third parameter are for future considerations.
-Neither `Nef_polyhedronItems_S2` nor `Nef_polyhedronMarks` is
-specifed, yet. Do not use other than the default types for these two
-template parameters.
-
 \cgalHeading{Exploration - Point location - Ray shooting}
 
 As Nef
 polyhedra are the result of forming complements and intersections
-starting from a set `H` of half-spaces that are defined by
+starting from a set `H` of halfspaces that are defined by
 oriented lines in the plane, they can be represented by an attributed
 plane map \f$ M = (V,E,F)\f$. For topological queries within `M` the
 following types and operations allow exploration access to this
@@ -46,7 +32,7 @@ structure.
 
 \cgalHeading{Input and Output}
 
-A Nef polyhedron `N` can be visualized in an open GL window. The
+A Nef polyhedron `N` can be visualized in an OpenGL window. The
 output operator is defined in the file
 `CGAL/IO/Nef_polyhedron_2_Window-stream.h`.
 
@@ -55,10 +41,10 @@ output operator is defined in the file
 Nef polyhedra are implemented on top of a halfedge data structure and
 use linear space in the number of vertices, edges and facets.
 Operations like `empty` take constant time. The operations
-`clear`, `complement`, `interior`, `closure`,
-`boundary`, `regularization`, input and output take linear
+`clear()`, `complement()`, `interior()`, `closure()`,
+`boundary()`, `regularization()`, input and output take linear
 time. All binary set operations and comparison operations take time
-\f$ O(n \log n)\f$ where \f$ n\f$ is the size of the output plus the size of the
+\cgalBigO{n \log n} where \f$ n\f$ is the size of the output plus the size of the
 input.
 
 The point location and ray shooting operations are implemented in the
@@ -257,7 +243,7 @@ Sphere_point antipode() ;
 \ingroup PkgNefS2Ref
 
 An object `s` of type `Sphere_segment` is a segment in the
-surface of a unit sphere that is part of a great circle trough the
+surface of a unit sphere that is part of a great circle through the
 origin. Sphere segments are represented by two sphere points \f$ p\f$ and
 \f$ q\f$ plus an oriented plane \f$ h\f$ that contains \f$ p\f$ and \f$ q\f$. The plane
 determines the sphere segment as follows. Let \f$ c\f$ be the circle in the
@@ -325,14 +311,14 @@ supporting `s`.
 const Sphere_circle& sphere_circle() ;
 
 /*!
-returns the sperical
+returns the spherical
 segment oriented from `target()` to `source()` with the same
 point set as `s`.
 */
 Sphere_segment opposite() ;
 
 /*!
-returns the sperical
+returns the spherical
 segment oriented from `target()` to `source()` with the
 point set completing `s` to a full circle.
 */
@@ -475,7 +461,7 @@ illustrate the incidences of an sface. An sface is described
 by its boundaries. An entry item to each boundary cycle can be accessed
 using the iterator range (`sface_cycles_begin()`/`sface_cycles_end()`).
 Additionally, `Nef_polyhedron_S2` provides the macro
-`CGAL_forall_sface_cylces_of`. The iterators are of type
+`CGAL_forall_sface_cycles_of`. The iterators are of type
 `SFace_cycle_const_iterator` and represent either a shalfedge, a shalfloop,
 or a svertex.
 
@@ -1072,7 +1058,7 @@ Nef_polyhedron_S2<K> difference(const Nef_polyhedron_S2<K>&
 N1) ;
 
 /*!
-returns the symmectric difference
+returns the symmetric difference
 `N - T` \f$ \cup\f$ `T - N`.
 */
 Nef_polyhedron_S2<K> symmetric_difference( const

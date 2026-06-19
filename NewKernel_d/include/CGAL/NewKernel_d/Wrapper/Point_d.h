@@ -40,7 +40,7 @@ class Point_d : public Get_type<typename R_::Kernel_base, Point_tag>::type
 
 
   typedef Point_d                            Self;
-  CGAL_static_assertion((std::is_same<Self, typename Get_type<R_, Point_tag>::type>::value));
+  static_assert(std::is_same<Self, typename Get_type<R_, Point_tag>::type>::value);
 
 public:
 
@@ -136,6 +136,12 @@ public:
   }
 
   friend auto operator!=(Point_d const&p, Point_d const&q) { return !(p==q); }
+
+  // May be accidentally inherited from the base class otherwise
+  friend auto operator< (Point_d const&p, Point_d const&q) = delete;
+  friend auto operator> (Point_d const&p, Point_d const&q) = delete;
+  friend auto operator<=(Point_d const&p, Point_d const&q) = delete;
+  friend auto operator>=(Point_d const&p, Point_d const&q) = delete;
 
   friend std::ostream& operator <<(std::ostream& os, const Point_d& p)
   {

@@ -22,7 +22,7 @@ used in some operations to mark for instance
 the facets that have been visited.
 
 This concept also provides storage for the centers of Delaunay surface balls.
-Each surface facet has a Delaunay surface ball, i. e.
+Each surface facet has a Delaunay surface ball, i.e.,
 a circumscribing ball, centered
 on an input complex surface patch,
 and empty of triangulation vertices.
@@ -34,19 +34,19 @@ called 'intrusive'.
 
 For parallel algorithms, the functions related to facet
 access/modification must be concurrency-safe when several calls are
-made in parallel on different facets of the cell (e.g. calling
+made in parallel on different facets of the cell (e.g., calling
 `set_facet_visited(0, true)`, `set_facet_visited(2, true)`
 and `is_facet_visited(1)` in parallel must be safe)
 
 Moreover, the parallel algorithms require an erase counter in
 each cell (see below).
 
-\cgalRefines `SimplicialMeshCellBase_3`
-\cgalRefines `RegularTriangulationCellBaseWithWeightedCircumcenter_3`
-\cgalRefines `CopyConstructible`
+\cgalRefines{SimplicialMeshCellBase_3,RegularTriangulationCellBaseWithWeightedCircumcenter_3}
 
-\cgalHasModel `CGAL::Compact_mesh_cell_base_3<Gt,MD,Tds>`
-\cgalHasModel `CGAL::Mesh_cell_base_3<Gt,MD,Cb>`
+\cgalHasModelsBegin
+\cgalHasModels{CGAL::Compact_mesh_cell_base_3<GT,MD,Tds>}
+\cgalHasModels{CGAL::Mesh_cell_base_3<GT,MD,Cb>}
+\cgalHasModelsEnd
 
 \sa `CGAL::make_mesh_3()`
 \sa `MeshDomain_3`

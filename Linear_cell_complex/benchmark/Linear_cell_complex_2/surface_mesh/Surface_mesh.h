@@ -491,7 +491,7 @@ public: //---------------------------------------------------- circulator types
             return !operator==(rhs);
         }
 
-        /// pre-increment (rotate couter-clockwise)
+        /// pre-increment (rotate counter-clockwise)
         Vertex_around_vertex_circulator& operator++()
         {
             assert(mesh_);
@@ -549,7 +549,7 @@ public: //---------------------------------------------------- circulator types
             return !operator==(rhs);
         }
 
-        /// pre-increment (rotate couter-clockwise)
+        /// pre-increment (rotate counter-clockwise)
         Halfedge_around_vertex_circulator& operator++()
         {
             assert(mesh_);
@@ -705,7 +705,7 @@ public: //---------------------------------------------------- circulator types
     {
     public:
 
-        /// default constructur
+        /// default constructor
         Halfedge_around_face_circulator(const Surface_mesh* m=NULL, Face f=Face())
         : mesh_(m)
         {
@@ -949,19 +949,19 @@ public: //---------------------------------------------- low-level connectivity
     }
 
 
-    /// returns the vertex the halfedge \c h points to
+    /// returns the vertex where the halfedge \c h points to
     Vertex to_vertex(Halfedge h) const
     {
         return hconn_[h].vertex_;
     }
 
-    /// returns the vertex the halfedge \c h emanates from
+    /// returns the vertex where the halfedge \c h emanates from
     Vertex from_vertex(Halfedge h) const
     {
         return to_vertex(opposite_halfedge(h));
     }
 
-    /// sets the vertex the halfedge \c h points to to \c v
+    /// sets the vertex the halfedge \c h points to \c v
     void set_vertex(Halfedge h, Vertex v)
     {
         hconn_[h].vertex_ = v;
@@ -1031,14 +1031,14 @@ public: //---------------------------------------------- low-level connectivity
     }
 
 
-    /// returns the \c i'th halfedge of edge \c e. \c i has to be 0 or 1.
+    /// returns the \c i-th halfedge of edge \c e. \c i has to be 0 or 1.
     Halfedge halfedge(Edge e, unsigned int i) const
     {
         assert(i<=1);
         return Halfedge((e.idx() << 1) + i);
     }
 
-    /// returns the \c i'th vertex of edge \c e. \c i has to be 0 or 1.
+    /// returns the \c i-th vertex of edge \c e. \c i has to be 0 or 1.
     Vertex vertex(Edge e, unsigned int i) const
     {
         assert(i<=1);
@@ -1103,7 +1103,7 @@ public: //--------------------------------------------------- property handling
     {
         return Halfedge_property<T>(hprops_.add<T>(name, t));
     }
-    /** add a edge property of type \c T with name \c name and default value \c t.
+    /** add an edge property of type \c T with name \c name and default value \c t.
      fails if a property named \c name exists already, since the name has to be unique.
      in this case it returns an invalid property */
     template <class T> Edge_property<T> add_edge_property(const std::string& name, const T t=T())

@@ -23,12 +23,23 @@
 #include <CGAL/license/Mesh_3.h>
 
 
+#include <CGAL/assertions.h>
+#include <CGAL/IO/io.h>
 #include <CGAL/Regular_triangulation_vertex_base_3.h>
 #include <CGAL/SMDS_3/internal/indices_management.h>
 #include <CGAL/SMDS_3/io_signature.h>
 #include <CGAL/Has_timestamp.h>
 #include <CGAL/tags.h>
-#include <atomic>
+#include <CGAL/TDS_3/internal/Dummy_tds_3.h>
+#include <CGAL/Time_stamper.h>
+
+#ifdef CGAL_LINKED_WITH_TBB
+#  include <atomic>
+#endif
+#include <cstddef>
+#include <istream>
+#include <ostream>
+#include <string>
 
 namespace CGAL {
 
@@ -115,6 +126,7 @@ public:
   // Types
   typedef Index_                      Index;
   typedef typename GT::FT             FT;
+  typedef typename Vb::Point          Point;
 
   // Constructor
   Mesh_vertex_3()
@@ -144,7 +156,7 @@ public:
   // that contains the vertex
   void set_dimension(const int dimension) {
     CGAL_assertion(dimension < 4);
-    dimension_ = short(dimension);
+    dimension_ = static_cast<short>(dimension);
   }
 
   // Tells if the vertex is marked as a special protecting ball
@@ -153,7 +165,7 @@ public:
   // Marks or unmarks the vertex as a special protecting ball
   void set_special(bool special = true) {
     if(special != (dimension_ < -1) )
-      dimension_ = short(-2-dimension_);
+      dimension_ = static_cast<short>(-2-dimension_);
   }
 
   // Returns the index of the lowest dimensional face of the input 3D complex
@@ -249,7 +261,7 @@ private:
   Vertex_handle next_intrusive_;
   Vertex_handle previous_intrusive_;
 #endif
-  std::size_t time_stamp_;
+  std::size_t time_stamp_ = Time_stamper<void>::invalid_time_stamp;
 public:
 
   friend std::istream& operator>>(std::istream &is, Mesh_vertex_3& v)
@@ -309,7 +321,7 @@ of the concept `MeshDomain_3`.
 of the concept `RegularTriangulationVertexBase_3` and defaults to
 `Regular_triangulation_vertex_base_3<GT>`.
 
-\cgalModels `MeshVertexBase_3`
+\cgalModels{MeshVertexBase_3}
 
 \sa `CGAL::Mesh_complex_3_in_triangulation_3<Tr,CornerIndex,CurveIndex>`
 */
@@ -317,9 +329,14 @@ template<class GT,
          class MD,
          class Vb = Regular_triangulation_vertex_base_3<GT> >
 struct Mesh_vertex_base_3 {
+#ifdef DOXYGEN_RUNNING
+  using Triangulation_data_structure = unspecified_type;
+#else
   using Triangulation_data_structure = internal::Dummy_tds_3;
+#endif
   using Vertex_handle = typename Triangulation_data_structure::Vertex_handle;
   using Cell_handle = typename Triangulation_data_structure::Cell_handle;
+  using Point = typename Vb::Point;
 
   template < class TDS3 >
   struct Rebind_TDS {
@@ -335,7 +352,11 @@ template<class GT,
          class Index,
          class Vb = Regular_triangulation_vertex_base_3<GT> >
 struct Mesh_vertex_generator_3 {
+#ifdef DOXYGEN_RUNNING
+  using Triangulation_data_structure = unspecified_type;
+#else
   using Triangulation_data_structure = internal::Dummy_tds_3;
+#endif
   using Vertex_handle = typename Triangulation_data_structure::Vertex_handle;
   using Cell_handle = typename Triangulation_data_structure::Cell_handle;
 

@@ -6,30 +6,32 @@ The concept `MutableHalfedgeGraph` refines the concept `HalfedgeGraph`
 and adds the requirements for operations to add vertices and edges, and to
 update the incidence information between vertices and halfedges.
 
-\cgalRefines `HalfedgeGraph`
+\cgalRefines{HalfedgeGraph}
 
-\cgalHasModel See \link PkgBGLTraits Boost Graph Traits Specializations \endlink
+\cgalHasModelsBegin
+\cgalHasModelsBare{See \link PkgBGLTraits Boost Graph Traits Specializations \endlink}
+\cgalHasModelsEnd
 
 \sa \link PkgBGLConcepts Graph Concepts \endlink
 */
 class MutableHalfedgeGraph{};
 
 
-/*! \relates MutableFaceGraph
+/*! \relates MutableHalfedgeGraph
 Adds a new vertex to the graph without initializing the connectivity.
  */
 template <typename MutableHalfedgeGraph>
-boost::graph_traits<MutableHalfedgeGraph>::face_descriptor
+boost::graph_traits<MutableHalfedgeGraph>::vertex_descriptor
 add_vertex(MutableHalfedgeGraph& g);
 
 /*! \relates MutableHalfedgeGraph
 Removes `v` from the graph.
  */
 template <typename MutableHalfedgeGraph>
-boost::graph_traits<MutableHalfedgeGraph>::face_descriptor
+void
 remove_vertex(boost::graph_traits<MutableHalfedgeGraph>::vertex_descriptor v, MutableHalfedgeGraph& g);
 
-/*! \relates MutableFaceGraph
+/*! \relates MutableHalfedgeGraph
 Adds two opposite halfedges to the graph without initializing the connectivity.
  */
 template <typename MutableHalfedgeGraph>
@@ -40,7 +42,7 @@ add_edge(MutableHalfedgeGraph& g);
 Removes the two halfedges corresponding to `e` from the graph.
  */
 template <typename MutableHalfedgeGraph>
-boost::graph_traits<MutableHalfedgeGraph>::face_descriptor
+void
 remove_edge(boost::graph_traits<MutableHalfedgeGraph>::edge_descriptor e, MutableHalfedgeGraph& g);
 
 

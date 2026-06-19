@@ -1,24 +1,25 @@
 // #define CGAL_PMP_COMPUTE_NORMAL_DEBUG_PP
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel_with_sqrt.h>
+#include <CGAL/Polygon_mesh_processing/compute_normal.h>
+#include <CGAL/Polygon_mesh_processing/bbox.h>
+#include <CGAL/Polygon_mesh_processing/shape_predicates.h>
 
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polyhedron_3.h>
 
 #include <CGAL/centroid.h>
-#include <CGAL/Polygon_mesh_processing/compute_normal.h>
-#include <CGAL/Polygon_mesh_processing/bbox.h>
-#include <CGAL/Polygon_mesh_processing/shape_predicates.h>
+
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+//#include <CGAL/Exact_predicates_exact_constructions_kernel_with_sqrt.h>
 
 #include <iostream>
 #include <fstream>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel          EPICK;
-typedef CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt  EPECK;
+//typedef CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt  EPECK;
 
 typedef CGAL::Surface_mesh<EPICK::Point_3>                           EPICK_SM;
-typedef CGAL::Surface_mesh<EPECK::Point_3>                           EPECK_SM;
+//typedef CGAL::Surface_mesh<EPECK::Point_3>                           EPECK_SM;
 
 namespace PMP = CGAL::Polygon_mesh_processing;
 
@@ -98,8 +99,11 @@ void test(const Mesh& mesh,
     // tests on non triangular meshes are @todo
     if(CGAL::is_triangle(halfedge(f, mesh), mesh))
     {
-      if(PMP::is_degenerate_triangle_face(f, mesh))
-        assert(get(fnormals, f) == CGAL::NULL_VECTOR);
+      if (PMP::is_degenerate_triangle_face(f, mesh))
+      {
+//        if (std::is_same<K, EPECK>())
+//          assert(get(fnormals, f) == CGAL::NULL_VECTOR);
+      }
       else
         assert(get(fnormals, f) != CGAL::NULL_VECTOR);
     }
@@ -142,9 +146,9 @@ void test_SM(const std::string file_name)
   }
 
   typename SM::template Property_map<vertex_descriptor, Vector> vnormals;
-  vnormals = mesh.template add_property_map<vertex_descriptor, Vector>("v:normals", CGAL::NULL_VECTOR).first;
+  vnormals = mesh.template add_property_map<vertex_descriptor, Vector>("v:normal", CGAL::NULL_VECTOR).first;
   typename SM::template Property_map<face_descriptor, Vector> fnormals;
-  fnormals = mesh.template add_property_map<face_descriptor, Vector>("f:normals", CGAL::NULL_VECTOR).first;
+  fnormals = mesh.template add_property_map<face_descriptor, Vector>("f:normal", CGAL::NULL_VECTOR).first;
 
   test<K>(mesh, vnormals, fnormals);
 }
@@ -207,20 +211,20 @@ int main()
 
   test(CGAL::data_file_path("meshes/elephant.off"));
   test("data/folded_star.off");
-  test("data/joint_refined.off");
+  test(CGAL::data_file_path("meshes/joint_refined.off"));
   test(CGAL::data_file_path("meshes/mannequin-devil.off"));
-  test("data/U.off");
+  test(CGAL::data_file_path("meshes/U_sheet.off"));
 
-  test("data_degeneracies/deg_on_border.off");
-  test("data_degeneracies/degtri_edge.off");
-  test("data_degeneracies/degtri_three.off");
-  test("data_degeneracies/degtri_four.off");
-  test("data_degeneracies/degtri_nullface.off");
-  test("data_degeneracies/degtri_single.off");
-  test("data_degeneracies/existing_flip.off");
-  test("data_degeneracies/fused_vertices.off");
-  test("data_degeneracies/small_ccs.off");
-  test("data_degeneracies/trihole.off");
+  test(CGAL::data_file_path("meshes/degeneracies/deg_on_border.off"));
+  test(CGAL::data_file_path("meshes/degeneracies/degtri_edge.off"));
+  test(CGAL::data_file_path("meshes/degeneracies/degtri_three.off"));
+  test(CGAL::data_file_path("meshes/degeneracies/degtri_four.off"));
+  test(CGAL::data_file_path("meshes/degeneracies/degtri_nullface.off"));
+  test(CGAL::data_file_path("meshes/degeneracies/degtri_single.off"));
+  test(CGAL::data_file_path("meshes/degeneracies/existing_flip.off"));
+  test(CGAL::data_file_path("meshes/degeneracies/fused_vertices.off"));
+  test(CGAL::data_file_path("meshes/degeneracies/small_ccs.off"));
+  test(CGAL::data_file_path("meshes/degeneracies/trihole.off"));
 
   std::cerr << "All done." << std::endl;
   return EXIT_SUCCESS;

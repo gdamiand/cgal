@@ -54,20 +54,20 @@ All the types defined in `Triangulation_2<Traits,Tds>` are inherited.
 \cgalHeading{Implementation}
 
 Insertion is implemented by inserting in the triangulation, then
-performing a sequence of Delaunay flips. The number of flips is \f$ O(d)\f$
+performing a sequence of Delaunay flips. The number of flips is \cgalBigO{d}
 if the new vertex is of degree \f$ d\f$ in the new triangulation. For
-points distributed uniformly at random, insertion takes time \f$ O(1)\f$ on
+points distributed uniformly at random, insertion takes time \cgalBigO{1} on
 average.
 
 Removal calls the removal in the triangulation and then re-triangulates
 the hole in such a way that the Delaunay criterion is satisfied. Removal of a
-vertex of degree \f$ d\f$ takes time \f$ O(d^2)\f$.
-The degree \f$ d\f$ is \f$ O(1)\f$ for a random
+vertex of degree \f$ d\f$ takes time \cgalBigO{d^2}.
+The degree \f$ d\f$ is \cgalBigO{1} for a random
 vertex in the triangulation.
 
 After a point location step, the nearest neighbor
-is found in time \f$ O(n)\f$ in the
-worst case, but in time \f$ O(1)\f$
+is found in time \cgalBigO{n} in the
+worst case, but in time \cgalBigO{1}
 for vertices distributed uniformly at random and any query point.
 
 \sa `CGAL::Triangulation_2<Traits,Tds>`
@@ -84,13 +84,13 @@ public:
 /// @{
 
 /*!
-default constructor.
+Default constructor.
 */
 Delaunay_triangulation_2(const Traits& gt =
 Traits());
 
 /*!
-copy constructor. All the vertices and faces are duplicated.
+Copy constructor. All the vertices and faces are duplicated.
 */
 Delaunay_triangulation_2(
 const Delaunay_triangulation_2<Traits,Tds> &tr);
@@ -139,7 +139,7 @@ Vertex_handle insert(const Point& p, Locate_type& lt,
 Face_handle loc, int li );
 
 /*!
-equivalent to `insert(p)`.
+Equivalent to `insert(p)`.
 */
 Vertex_handle push_back(const Point& p);
 
@@ -183,7 +183,7 @@ void remove(Vertex_handle v);
 /// @{
 
 /*!
-if there is not already another vertex placed on `p`,
+If there is not already another vertex placed on `p`,
 the triangulation is modified such that the new position of vertex `v`
 is `p`, and `v` is returned. Otherwise, the triangulation is not
 modified and the vertex at point `p` is returned.
@@ -192,7 +192,7 @@ modified and the vertex at point `p` is returned.
 Vertex_handle move_if_no_collision(Vertex_handle v, const Point & p);
 
 /*!
-same as `move_if_no_collision()`, if there is no collision. Otherwise, `v`
+Same as `move_if_no_collision()`, if there is no collision. Otherwise, `v`
 is deleted and the vertex placed on `p` is returned.
 \pre Vertex `v` must be finite.
 */
@@ -221,7 +221,7 @@ i. e., the faces whose circumcircle contains `p`.
 It outputs in the container pointed to by `eit` the
 the boundary of the zone in conflict with `p`.
 The boundary edges
-of the conflict zone are output in counter-clockwise order
+of the conflict zone are output in counterclockwise order
 and each edge is described through its incident face
 which is not in conflict with `p`.
 The function returns in a `std::pair` the resulting output iterators.
@@ -276,7 +276,7 @@ Face_handle start = Face_handle()) const;
 /// @{
 
 /*!
-Returns the center of the circle circumscribed to face `f`.
+returns the center of the circle circumscribed to face `f`.
 \pre `f` is not infinite.
 */
 Point dual(const Face_handle &f) const;
@@ -315,7 +315,7 @@ Stream& draw_dual(Stream & ps);
 /// @{
 
 /*!
-Returns the side of `p` with respect to the circle circumscribing
+returns the side of `p` with respect to the circle circumscribing
 the triangle associated with `f`.
 */
 Oriented_side side_of_oriented_circle(Face_handle f, const Point& p) const;

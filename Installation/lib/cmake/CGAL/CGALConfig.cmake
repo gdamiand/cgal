@@ -2,12 +2,18 @@
 # This file is the CGALConfig.cmake for a header-only CGAL installation
 #
 
-# For UseCGAL.cmake
+cmake_minimum_required(VERSION 3.22...3.31)
+
+# For CGAL_CreateSingleSourceCGALProgram.cmake
 set( CGAL_REQUESTED_COMPONENTS ${CGAL_FIND_COMPONENTS} )
 
 set(CGAL_LIBRARIES CGAL)
 
-get_filename_component(CGAL_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+# Resolve symlinks before extracting the directory so that the subsequent
+# DIRECTORY walk produces a correct CGAL_ROOT (e.g. /lib -> /usr/lib on
+# Arch Linux).  See https://github.com/CGAL/cgal/issues/8521
+file(REAL_PATH "${CMAKE_CURRENT_LIST_FILE}" _cgal_config_realpath)
+get_filename_component(CGAL_CONFIG_DIR "${_cgal_config_realpath}" DIRECTORY)
 
 function(cgal_detect_branch_build VAR_NAME)
   if(IS_DIRECTORY ${CGAL_CONFIG_DIR}/../../../../Installation/package_info/Installation/)
@@ -89,7 +95,7 @@ if (NOT CGAL_DATA_DIR)
           if (EXISTS "${CMAKE_SOURCE_DIR}/../../data")
               set(CGAL_DATA_DIR "${CMAKE_SOURCE_DIR}/../../data")
           else()
-            if(CGAL_TEST_SUITE)
+            if(RUNNING_CGAL_AUTO_TEST OR CGAL_TEST_SUITE)
               message(WARNING "CGAL_DATA_DIR cannot be deduced, set the variable CGAL_DATA_DIR to set the default value of CGAL::data_file_path()")
             endif()
           endif()
@@ -113,14 +119,32 @@ include(${CGAL_MODULES_DIR}/CGAL_Common.cmake)
 include(${CGAL_MODULES_DIR}/CGAL_TweakFindBoost.cmake)
 include(${CGAL_MODULES_DIR}/CGAL_enable_end_of_configuration_hook.cmake)
 
-set(CGAL_USE_FILE ${CGAL_MODULES_DIR}/UseCGAL.cmake)
+include(${CGAL_CONFIG_DIR}/CGALConfigVersion.cmake)
+
+# Temporary? Change the CMAKE module path
+cgal_setup_module_path()
+
+include(${CGAL_MODULES_DIR}/CGAL_target_use_TBB.cmake)
+
+if( CGAL_DEV_MODE OR RUNNING_CGAL_AUTO_TEST OR CGAL_TEST_SUITE )
+  # Do not use -isystem for CGAL include paths
+  if(CMAKE_VERSION VERSION_LESS 3.25)
+    set(CMAKE_NO_SYSTEM_FROM_IMPORTED TRUE)
+  endif()
+endif()
+
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "AppleClang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 11.0.3)
+  message(STATUS "Apple Clang version ${CMAKE_CXX_COMPILER_VERSION} compiler detected")
+  message(STATUS "Boost MP is turned off for all Apple Clang versions below 11.0.3!")
+  set(CGAL_DO_NOT_USE_BOOST_MP TRUE)
+endif()
 
 foreach(comp ${CGAL_FIND_COMPONENTS})
-  if(NOT comp MATCHES "Core|ImageIO|Qt5")
+  if(NOT comp MATCHES "Core|ImageIO|Qt6")
     message(FATAL_ERROR "The requested CGAL component ${comp} does not exist!")
   endif()
-  if(comp MATCHES "Core" AND CGAL_DISABLE_GMP)
-    message("CGAL_Core needs GMP and won't be used.")
+  if(comp MATCHES "Core" AND CGAL_DO_NOT_USE_BOOST_MP)
+    message(STATUS "CGAL_Core needs Boost multiprecision support and won't be used.")
   else()
     list(APPEND CGAL_LIBRARIES CGAL_${comp})
   endif()
@@ -134,11 +158,6 @@ foreach(cgal_lib ${CGAL_LIBRARIES})
     set(CGALConfig_all_targets_are_defined FALSE)
   endif()
 endforeach()
-if(CGALConfig_all_targets_are_defined)
-  return()
-endif()
-
-message(STATUS "Using header-only CGAL")
 
 if(NOT CGAL_FOUND)
   return()
@@ -167,6 +186,12 @@ foreach(cgal_lib ${CGAL_LIBRARIES})
   set(WITH_${cgal_lib} TRUE)
   if(${cgal_lib}_FOUND AND NOT TARGET ${cgal_lib})
     add_library(${cgal_lib} INTERFACE IMPORTED GLOBAL)
+    if( CGAL_DEV_MODE OR RUNNING_CGAL_AUTO_TEST OR CGAL_TEST_SUITE )
+      # Do not use -isystem for CGAL include paths
+      if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.25)
+        set_target_properties(${cgal_lib} PROPERTIES SYSTEM FALSE)
+      endif()
+    endif()
     if(NOT TARGET CGAL::${cgal_lib})
       add_library(CGAL::${cgal_lib} ALIAS ${cgal_lib})
     endif()
@@ -177,26 +202,25 @@ endforeach()
 #
 # Define a specific target for basic viewer
 #
-if (NOT TARGET CGAL::CGAL_Basic_viewer)
-  add_library(CGAL::CGAL_Basic_viewer INTERFACE IMPORTED GLOBAL)
-    set_target_properties(CGAL::CGAL_Basic_viewer PROPERTIES
-      INTERFACE_COMPILE_DEFINITIONS "CGAL_USE_BASIC_VIEWER;QT_NO_KEYWORDS"
-      INTERFACE_LINK_LIBRARIES CGAL::CGAL_Qt5)
+if (NOT TARGET CGAL::CGAL_Basic_viewer_Qt)
+  add_library(CGAL::CGAL_Basic_viewer_Qt INTERFACE IMPORTED GLOBAL)
+    set_target_properties(CGAL::CGAL_Basic_viewer_Qt PROPERTIES
+      INTERFACE_COMPILE_DEFINITIONS "CGAL_USE_BASIC_VIEWER"
+      INTERFACE_LINK_LIBRARIES CGAL::CGAL_Qt6)
+  add_library(CGAL::CGAL_Basic_viewer ALIAS CGAL::CGAL_Basic_viewer_Qt)
 endif()
 
-include(${CGAL_CONFIG_DIR}/CGALConfigVersion.cmake)
+#warning: the order in this list has to match the enum in Exact_type_selector
+set(CGAL_CMAKE_EXACT_NT_BACKEND_OPTIONS GMP_BACKEND GMPXX_BACKEND BOOST_GMP_BACKEND BOOST_BACKEND LEDA_BACKEND MP_FLOAT_BACKEND Default)
+set(CGAL_CMAKE_EXACT_NT_BACKEND "Default" CACHE STRING "Setting for advanced users that what to change the default number types used in filtered kernels. Some options might not be working depending on how you configured your build.")
+set_property(CACHE CGAL_CMAKE_EXACT_NT_BACKEND PROPERTY STRINGS ${CGAL_CMAKE_EXACT_NT_BACKEND_OPTIONS})
 
-#
-#
-#
-
-# Temporary? Change the CMAKE module path
-cgal_setup_module_path()
-
-set(CGAL_USE_FILE ${CGAL_MODULES_DIR}/UseCGAL.cmake)
-include(${CGAL_MODULES_DIR}/CGAL_target_use_TBB.cmake)
-
-if( CGAL_DEV_MODE OR RUNNING_CGAL_AUTO_TEST )
-  # Do not use -isystem for CGAL include paths
-  set(CMAKE_NO_SYSTEM_FROM_IMPORTED TRUE)
+if ( NOT "${CGAL_CMAKE_EXACT_NT_BACKEND}" STREQUAL "Default" )
+  list(FIND CGAL_CMAKE_EXACT_NT_BACKEND_OPTIONS ${CGAL_CMAKE_EXACT_NT_BACKEND} DEB_VAL)
+  set_property(
+      TARGET CGAL
+      APPEND PROPERTY
+          INTERFACE_COMPILE_DEFINITIONS "CMAKE_OVERRIDDEN_DEFAULT_ENT_BACKEND=${DEB_VAL}"
+  ) # do not use set_target_properties to avoid overwriting
 endif()
+

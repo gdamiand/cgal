@@ -30,7 +30,9 @@ A model of this concept is a type to be plugged as first template
 parameter in the
 function template `CGAL::make_surface_mesh()`.
 
-\cgalHasModel `CGAL::Surface_mesh_complex_2_in_triangulation_3<Tr>`
+\cgalHasModelsBegin
+\cgalHasModels{CGAL::Surface_mesh_complex_2_in_triangulation_3<Tr>}
+\cgalHasModelsEnd
 
 \sa `CGAL::make_surface_mesh()`
 
@@ -248,7 +250,7 @@ Returns `true`, if the vertex `v` belongs to the 2D complex.
 bool is_in_complex(Vertex_handle v);
 
 /*!
-Returns true if the status of vertex `v` is `REGULAR` or `BOUNDARY`.
+Returns `true` if the status of vertex `v` is `REGULAR` or `BOUNDARY`.
 \pre All the edges of the complex incident to `v` are `REGULAR` or `BOUNDARY`.
 */
 bool is_regular_or_boundary_for_vertices (Vertex_handle v);

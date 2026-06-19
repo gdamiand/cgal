@@ -1,10 +1,12 @@
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
-#include <CGAL/Surface_mesh.h>
-#include <CGAL/Polyhedron_3.h>
-#include <CGAL/Polygon_mesh_processing/IO/polygon_mesh_io.h>
 #include <CGAL/Polyhedral_envelope.h>
 #include <CGAL/Polygon_mesh_processing/repair_self_intersections.h>
+#include <CGAL/Polygon_mesh_processing/IO/polygon_mesh_io.h>
+
+#include <CGAL/Surface_mesh.h>
+#include <CGAL/Polyhedron_3.h>
+
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 
 namespace PMP = CGAL::Polygon_mesh_processing;
 
@@ -115,7 +117,7 @@ void cube_test()
 {
   std::cout << "---- cube_test() ----\n";
   CGAL::Surface_mesh<EPIC::Point_3> tm;
-  std::ifstream in("data-coref/cube_meshed.off");
+  std::ifstream in(CGAL::data_file_path("meshes/cube_meshed.off"));
   in >> tm;
   assert(tm.vertices().size()!=0);
 

@@ -26,7 +26,7 @@ then the default traits class of `::convex_hull_3()` is `Convex_hull_traits_3<R>
 \cgalHeading{Implementation}
 
 The algorithm implemented by these functions is the quickhull algorithm of
-Barnard <I>et al.</I> \cgalCite{bdh-qach-96}.
+Barber <I>et al.</I> \cgalCite{bdh-qach-96}.
 
 
 */
@@ -154,9 +154,9 @@ then the default traits class used is `Convex_hull_traits_3<R>`, and `R` otherwi
 */
 template <class InputRange, class OutputIterator, class Traits>
 OutputIterator
-extreme_points_3(InputRange range,
-              OutputIterator out,
-              const Traits& traits);
+extreme_points_3(const InputRange &range,
+                 OutputIterator out,
+                 const Traits& traits);
 
 
 

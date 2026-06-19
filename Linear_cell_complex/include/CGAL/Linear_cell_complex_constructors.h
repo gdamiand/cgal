@@ -13,7 +13,7 @@
 #define CGAL_LINEAR_CELL_COMPLEX_CONSTRUCTORS_H 1
 
 #include <CGAL/IO/OFF.h>
-#include <CGAL/Linear_cell_complex_incremental_builder.h>
+#include <CGAL/Linear_cell_complex_incremental_builder_3.h>
 #include <CGAL/Unique_hash_map.h>
 #include <CGAL/assertions.h>
 
@@ -23,6 +23,7 @@
 #include <map>
 #include <vector>
 #include <list>
+#include <CGAL/config.h>
 
 namespace CGAL {
 
@@ -36,7 +37,7 @@ namespace CGAL {
    * Imports a plane-embedded graph from a list of points and edges represented as pairs of vertex indices
    */
   template< class LCC >
-  typename LCC::Dart_descriptor import_from_plane_graph(LCC& alcc,
+  typename LCC::Dart_descriptor read_plane_graph_in_lcc(LCC& alcc,
                                                    const std::vector<typename LCC::Point>& vertices,
                                                    const std::vector<size_t>& edge_indices)
   {
@@ -48,7 +49,7 @@ namespace CGAL {
     typedef typename std::list<Dart_descriptor>::iterator List_iterator;
     typedef typename LCC::Point Point;
 
-    CGAL_static_assertion( LCC::dimension>=2 && LCC::ambient_dimension==2 );
+    static_assert( LCC::dimension>=2 && LCC::ambient_dimension==2 );
     CGAL_assertion(edge_indices.size() % 2 == 0);
 
     std::vector< typename LCC::Vertex_attribute_descriptor > initVertices;
@@ -130,15 +131,30 @@ namespace CGAL {
     return first;
   }
 
+#ifndef CGAL_NO_DEPRECATED_CODE
+/*!
+  \deprecated This function is deprecated since CGAL 6.2. Use `read_plane_graph_in_lcc()` instead.
+*/
+template< class LCC >
+CGAL_DEPRECATED
+typename LCC::Dart_descriptor
+import_from_plane_graph(LCC& alcc,
+                        const std::vector<typename LCC::Point>& vertices,
+                        const std::vector<size_t>& edge_indices)
+{
+  return read_plane_graph_in_lcc(alcc, vertices, edge_indices);
+}
+#endif
+
   /**
    * Imports a plane-embedded graph from a file into a LinearCellComplex.
    *
    * @param alcc the linear cell complex where the graph will be imported.
    * @param ais the istream where read the graph.
-   * @return A dart created during the convertion.
+   * @return A dart created during the conversion.
    */
   template< class LCC >
-  typename LCC::Dart_descriptor import_from_plane_graph(LCC& alcc,
+  typename LCC::Dart_descriptor read_plane_graph_in_lcc(LCC& alcc,
                                                     std::istream& ais)
   {
     using FT = typename LCC::FT;
@@ -185,17 +201,43 @@ namespace CGAL {
       edge_indices.push_back(v2);
     }
 
-    return import_from_plane_graph(alcc, vertices, edge_indices);
+    return read_plane_graph_in_lcc(alcc, vertices, edge_indices);
   }
+
+#ifndef CGAL_NO_DEPRECATED_CODE
+/*!
+  \deprecated This function is deprecated since CGAL 6.2. Use `read_plane_graph_in_lcc()` instead.
+*/
+template< class LCC >
+CGAL_DEPRECATED
+typename LCC::Dart_descriptor
+import_from_plane_graph(LCC& alcc, std::istream& ais)
+{
+  return read_plane_graph_in_lcc(alcc, ais);
+}
+#endif
 
   template < class LCC >
   typename LCC::Dart_descriptor
-  import_from_plane_graph(LCC& alcc, const char* filename)
+  read_plane_graph_in_lcc(LCC& alcc, const char* filename)
   {
     std::ifstream input(filename);
     if (!input.is_open()) return alcc.null_descriptor;
-    return import_from_plane_graph(alcc, input);
+    return read_plane_graph_in_lcc(alcc, input);
   }
+
+#ifndef CGAL_NO_DEPRECATED_CODE
+/*!
+  \deprecated This function is deprecated since CGAL 6.2. Use `read_plane_graph_in_lcc()` instead.
+*/
+template< class LCC >
+CGAL_DEPRECATED
+typename LCC::Dart_descriptor
+import_from_plane_graph(LCC& alcc, const char* filename)
+{
+  return read_plane_graph_in_lcc(alcc, filename);
+}
+#endif
 
   template < class LCC >
   bool load_off(LCC& alcc, std::istream& in)

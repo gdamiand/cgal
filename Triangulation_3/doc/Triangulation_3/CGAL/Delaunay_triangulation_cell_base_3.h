@@ -11,10 +11,10 @@ of Delaunay triangulations.
 \tparam Traits is the geometric traits class and must be a model of `DelaunayTriangulationTraits_3`.
 
 \tparam Cb must be a model of `TriangulationCellBase_3`.
-By default, this parameter is instantiated by
+By default, this parameter is instantiated with
 `Triangulation_cell_base_3<Traits>`.
 
-\cgalModels `DelaunayTriangulationCellBase_3`
+\cgalModels{DelaunayTriangulationCellBase_3}
 
 \sa `DelaunayTriangulationCellBase_3`
 \sa `CGAL::Delaunay_triangulation_3`
@@ -35,7 +35,7 @@ typedef Traits::Point_3 Point;
 
 As a model of the concept `DelaunayTriangulationCellBase_3`,
 `Delaunay_triangulation_cell_base_3`
-provides a `circumcenter()` member fonction.
+provides a `circumcenter()` member function.
 */
 
 /// @{

@@ -7,7 +7,7 @@ namespace CGAL {
 The class `Triangulation_cell_base_with_info_3` is a model of the concept
 `TriangulationCellBase_3`, the base cell of a 3D-triangulation.
 It provides an easy way to add some user defined information in cells.
-Note that input/output operators discard this additional information.
+Note that input/output stream operators discard this additional information.
 
 
 \tparam Info  is the information the user would like to add
@@ -22,8 +22,7 @@ It must be a model of the `TriangulationCellBase_3` concept.
 It has the default value
 `Triangulation_cell_base_3<TriangulationTraits_3>`.
 
-\cgalModels `TriangulationCellBase_3`
-\cgalModels `TriangulationCellBaseWithInfo_3`
+\cgalModels{TriangulationCellBase_3,TriangulationCellBaseWithInfo_3}
 
 \sa `CGAL::Triangulation_cell_base_3`
 \sa `CGAL::Triangulation_vertex_base_with_info_3`

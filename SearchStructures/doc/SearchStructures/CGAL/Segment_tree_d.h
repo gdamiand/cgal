@@ -8,10 +8,10 @@ namespace CGAL {
 
 \cgalHeading{Implementation}
 
-A \f$ d\f$-dimensional segment tree is constructed in \f$ {O}(n\log n^d)\f$ time.
-An inverse range query is performed in time \f$ {O}(k+{\log}^d n )\f$, where \f$ k\f$
+A \f$ d\f$-dimensional segment tree is constructed in \cgalBigO{n\log n^d} time.
+An inverse range query is performed in time \cgalBigO{k+{\log}^d n }, where \f$ k\f$
 is the number of reported intervals.
-The tree uses \f$ {O}(n\log n^d)\f$ storage.
+The tree uses \cgalBigO{n\log n^d} storage.
 
 */
 template< typename Data, typename Window, typename Traits >
@@ -83,7 +83,7 @@ Traits> s(Tree_base<Data, Window> sublayer_tree);
 The tree is constructed according to the data items in the
 sequence between the element pointed by iterator `first` and
 iterator `last`.
-\pre This function can only be called once. If it is the first call the tree is build and `true` is returned. Otherwise, nothing is done but a `CGAL warning` is given and `false` returned.
+\pre This function can only be called once. If it is the first call the tree is built and `true` is returned. Otherwise, nothing is done but a `CGAL warning` is given and `false` returned.
 */
 bool make_tree(In_it first, In_it last);
 
@@ -116,7 +116,7 @@ vertex either the
 sublayer tree is a tree anchor, or it stores a (possibly empty)
 list of data items. In the first case, the sublayer tree of the
 vertex is checked on being valid. In the second case, each data
-item is checked weather it contains the associated interval of
+item is checked whether it contains the associated interval of
 the vertex and does not contain the associated interval of the
 parent vertex or not. `true` is returned if the tree structure is valid,
 `false` otherwise.

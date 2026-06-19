@@ -2,6 +2,7 @@ Algebraic_foundations
 Alpha_shapes_2
 Arithmetic_kernel
 BGL
+CGAL_Core
 Cartesian_kernel
 Circulator
 Convex_hull_2
@@ -18,6 +19,7 @@ Kernel_23
 Kernel_d
 Modular_arithmetic
 Number_types
+PMP_Mesh_repair
 Point_set_3
 Point_set_processing_3
 Polygon
@@ -26,7 +28,6 @@ Principal_component_analysis
 Principal_component_analysis_LGPL
 Profiling_tools
 Property_map
-Random_numbers
 STL_Extension
 Solver_interface
 Spatial_searching

@@ -57,6 +57,8 @@ is_sharp(const typename boost::graph_traits<PolygonMesh>::halfedge_descriptor h,
 
   typedef typename boost::graph_traits<PolygonMesh>::halfedge_descriptor       halfedge_descriptor;
 
+  CGAL_precondition(is_valid_halfedge_descriptor(h, pmesh));
+
   if(is_border_edge(h, pmesh))
     return false;
 
@@ -332,8 +334,17 @@ void detect_vertex_incident_patches(const PolygonMesh& pmesh,
   for(vertex_descriptor vit :vertices(pmesh))
   {
     // Look only at feature vertices
-    if(!get(edge_is_feature_map, edge(halfedge(vit, pmesh), pmesh)))
-      continue;
+    bool skip=true;
+    for(halfedge_descriptor he : halfedges_around_target(vit, pmesh))
+    {
+      if(get(edge_is_feature_map, edge(he, pmesh)))
+      {
+        skip=false;
+        break;
+      }
+    }
+
+    if (skip) continue;
 
     // Loop on incident facets of vit
     typename VertexIncidentPatchesMap::value_type& id_set = vertex_incident_patches_map[vit];

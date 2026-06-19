@@ -25,7 +25,8 @@ bool do_intersect_coplanar(const typename K::Point_3& A,
                            const typename K::Point_3& B,
                            const typename K::Point_3& C,
                            const typename K::Point_3& p,
-                           const typename K::Point_3& q, const K& k)
+                           const typename K::Point_3& q,
+                           const K& k)
 {
   typedef typename K::Point_3 Point_3;
 
@@ -173,9 +174,10 @@ bool do_intersect_coplanar(const typename K::Triangle_3& t,
 }
 
 template <class K>
-bool do_intersect(const typename K::Triangle_3& t,
-                  const typename K::Segment_3& s,
-                  const K& k)
+typename K::Boolean
+do_intersect(const typename K::Triangle_3& t,
+             const typename K::Segment_3& s,
+             const K& k)
 {
   CGAL_kernel_precondition(!k.is_degenerate_3_object()(t) );
   CGAL_kernel_precondition(!k.is_degenerate_3_object()(s) );
@@ -197,48 +199,31 @@ bool do_intersect(const typename K::Triangle_3& t,
 
   switch ( abcp ) {
   case POSITIVE:
-    switch ( abcq ) {
-    case POSITIVE:
+    if( abcq == POSITIVE ){
       // the segment lies in the positive open halfspaces defined by the
       // triangle's supporting plane
       return false;
-    case NEGATIVE:
-      // p sees the triangle in counterclockwise order
-      return orientation(p,q,a,b) != POSITIVE
-          && orientation(p,q,b,c) != POSITIVE
-          && orientation(p,q,c,a) != POSITIVE;
-    case COPLANAR:
-      // q belongs to the triangle's supporting plane
-      // p sees the triangle in counterclockwise order
-      return orientation(p,q,a,b) != POSITIVE
-          && orientation(p,q,b,c) != POSITIVE
-          && orientation(p,q,c,a) != POSITIVE;
-    default: // should not happen.
-      CGAL_kernel_assertion(false);
-      return false;
     }
+    // NEGATIVE: p sees the triangle in counterclockwise order
+    // COPLANAR: q belongs to the triangle's supporting plane
+    //           and p sees the triangle in counterclockwise order
+    return orientation(p,q,a,b) != POSITIVE
+        && orientation(p,q,b,c) != POSITIVE
+        && orientation(p,q,c,a) != POSITIVE;
+
   case NEGATIVE:
-    switch ( abcq ) {
-    case POSITIVE:
-      // q sees the triangle in counterclockwise order
-      return orientation(q,p,a,b) != POSITIVE
-          && orientation(q,p,b,c) != POSITIVE
-          && orientation(q,p,c,a) != POSITIVE;
-    case NEGATIVE:
+    if( abcq == NEGATIVE ){
       // the segment lies in the negative open halfspaces defined by the
       // triangle's supporting plane
       return false;
-    case COPLANAR:
-      // q belongs to the triangle's supporting plane
-      // p sees the triangle in clockwise order
-      return orientation(q,p,a,b) != POSITIVE
-          && orientation(q,p,b,c) != POSITIVE
-          && orientation(q,p,c,a) != POSITIVE;
-
-    default: // should not happen.
-      CGAL_kernel_assertion(false);
-      return false;
     }
+    // POSITIVE: q sees the triangle in counterclockwise order
+    // COPLANAR: q belongs to the triangle's supporting plane
+    //           and p sees the triangle in clockwise order
+    return orientation(q,p,a,b) != POSITIVE
+        && orientation(q,p,b,c) != POSITIVE
+        && orientation(q,p,c,a) != POSITIVE;
+
   case COPLANAR: // p belongs to the triangle's supporting plane
     switch ( abcq ) {
     case POSITIVE:
@@ -269,9 +254,10 @@ bool do_intersect(const typename K::Triangle_3& t,
 
 template <class K>
 inline
-bool do_intersect(const typename K::Segment_3& s,
-                  const typename K::Triangle_3& t,
-                  const K& k)
+typename K::Boolean
+do_intersect(const typename K::Segment_3& s,
+             const typename K::Triangle_3& t,
+             const K& k)
 {
   return do_intersect(t, s, k);
 }

@@ -41,7 +41,7 @@ namespace internal
 // ****************************************************************************
 // Map1 is the existing map, to convert into map2.
 // Functor called only when both i-attributes have non void info.
-// General cases when both info are differents.
+// General cases when both info are different.
 template< typename Map1, typename Map2, unsigned int i,
           typename Info1=typename Map1::template
           Attribute_type<i>::type::Info,
@@ -228,7 +228,7 @@ struct Call_functor_if_both_attributes_have_point
        const Pointconverter&)
   { return Map2::null_descriptor; }
 };
-// Specialisation with i==0 and both attributes have points.
+// Specialization with i==0 and both attributes have points.
 template< typename Map1, typename Map2, typename Pointconverter >
 struct Call_functor_if_both_attributes_have_point<Map1, Map2, 0,
     Pointconverter, true, true>
@@ -285,7 +285,7 @@ struct Copy_attribute_functor_if_nonvoid
       cmap2.template set_attribute<i>(dh2, res);
   }
 };
-// Specialisation when attr1 is void, and attr2 is non void i==0. Nothing to
+// Specialization when attr1 is void, and attr2 is non void i==0. Nothing to
 // copy, but if 0-attributes has point and i==0, we need to create
 // vertex attributes.
 template<typename Map1, typename Map2, typename Converters,
@@ -310,7 +310,7 @@ struct Copy_attribute_functor_if_nonvoid<Map1, Map2, Converters,
           set_attribute<0>(dh2, cmap2.template create_attribute<0>());
   }
 };
-// Specialisation when attr1 is void, and attr2 is non void i!=0.
+// Specialization when attr1 is void, and attr2 is non void i!=0.
 // Nothing to do.
 template<typename Map1, typename Map2, typename Converters, unsigned int i,
          typename Pointconverter, typename Attr2>
@@ -360,7 +360,7 @@ struct Copy_dart_info_functor_if_nonvoid
                    const DartInfoConverter& converter)
   { converter(map1, map2, dh1, dh2); }
 };
-// Specialisation when Info1 is void.
+// Specialization when Info1 is void.
 template<typename Map1, typename Map2, typename DartInfoConverter,
          typename Info2>
 struct Copy_dart_info_functor_if_nonvoid<Map1, Map2, DartInfoConverter,
@@ -373,7 +373,7 @@ struct Copy_dart_info_functor_if_nonvoid<Map1, Map2, DartInfoConverter,
                    const DartInfoConverter&)
   {}
 };
-// Specialisation when Info2 is void.
+// Specialization when Info2 is void.
 template<typename Map1, typename Map2, typename DartInfoConverter,
          typename Info1>
 struct Copy_dart_info_functor_if_nonvoid<Map1, Map2, DartInfoConverter,
@@ -386,7 +386,7 @@ struct Copy_dart_info_functor_if_nonvoid<Map1, Map2, DartInfoConverter,
                    const DartInfoConverter&)
   {}
 };
-// Specialisation when both Info1 and Info2 are void.
+// Specialization when both Info1 and Info2 are void.
 template<typename Map1, typename Map2, typename DartInfoConverter>
 struct Copy_dart_info_functor_if_nonvoid<Map1, Map2, DartInfoConverter,
     CGAL::Void, CGAL::Void>
@@ -439,7 +439,7 @@ struct Default_converter_cmap_attributes
 };
 // ****************************************************************************
 // Cast converter always copy attributes, doing a cast. This can work only
-// if both types are convertible and this is user responsability
+// if both types are convertible and this is user responsibility
 // to use it only in this case.
 template< typename Map1, typename Map2, unsigned int i>
 struct Cast_converter_cmap_attributes
@@ -480,7 +480,7 @@ struct Default_converter_dart_info<Map1, Map2, Info, Info>
 };
 // ****************************************************************************
 // Cast converter of dart info. This can work only if both types are
-// convertible and this is user responsability to use it only in this case.
+// convertible and this is user responsibility to use it only in this case.
 template< typename Map1, typename Map2>
 struct Cast_converter_dart_info
 {

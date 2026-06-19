@@ -4,7 +4,9 @@
 
 The concept `GenericMapItems` allows to customize a <I>d</I>D generic map by choosing the information associated with darts, by enabling and disabling some attributes, and by choosing to use indices or handles. For that, it defines an inner class template named \link GenericMapItems::Dart_wrapper `Dart_wrapper`\endlink, with one template parameter, `Map`, a model of the `GenericMap` concept. This inner class can define the two types `%Dart_info` and `%Attributes`.
 
-\cgalHasModel \link CGAL::Generic_map_min_items `CGAL::Generic_map_min_items`\endlink
+\cgalHasModelsBegin
+\cgalHasModelsBare{\link CGAL::Generic_map_min_items `CGAL::Generic_map_min_items`\endlink}
+\cgalHasModelsEnd
 
 \sa `GenericMap`
 
@@ -13,14 +15,14 @@ The concept `GenericMapItems` allows to customize a <I>d</I>D generic map by cho
 The following examples show two possible models of the `GenericMapItems` concept: the first one for a generic map without dart information, nor enabled attributes, the second one for a generic map that uses std::uint16_t as indices, with a `double` associated with each dart, and edge attributes enabled, and associated with a \link CGAL::Cell_attribute `Cell_attribute`\endlink containing an `int`.
 
   \code{.cpp}
-  struct Exemple_Item_1
+  struct Example_Item_1
   {
     template < class CMap >
     struct Dart_wrapper
     {};
   };
 
-  struct Exemple_Item_2
+  struct Example_Item_2
   {
     typedef CGAL::Tag_true Use_index; // CGAL::Tag_false by default
     typedef std::uint16_t Index_type; // std::uint32_t by default

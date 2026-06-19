@@ -38,36 +38,37 @@ bool do_bbox_intersect(const typename K::Triangle_3& triangle,
   const typename K::Point_3& p = triangle.vertex(0);
   const typename K::Point_3& q = triangle.vertex(1);
   const typename K::Point_3& r = triangle.vertex(2);
+  using FT = typename K::FT;
 
   for(int i = 0; i < 3; ++i) {
     if(p[i] <= q[i]) {
       if(q[i] <= r[i]) { // pqr
-        if((bbox.max_coord(i) < p[i]) || (bbox.min_coord(i) > r[i]))
+        if((FT(bbox.max_coord(i)) < p[i]) || (FT(bbox.min_coord(i)) > r[i]))
           return false;
       }
       else {
         if(p[i] <= r[i]) { // prq
-          if(bbox.max_coord(i) < p[i] || bbox.min_coord(i) > q[i])
+          if(FT(bbox.max_coord(i)) < p[i] || FT(bbox.min_coord(i)) > q[i])
             return false;
         }
         else { // rpq
-          if(bbox.max_coord(i) < r[i] || bbox.min_coord(i) > q[i])
+          if(FT(bbox.max_coord(i)) < r[i] || FT(bbox.min_coord(i)) > q[i])
             return false;
         }
       }
     }
     else {
       if(p[i] <= r[i]) { // qpr
-        if(bbox.max_coord(i) < q[i] || bbox.min_coord(i) > r[i])
+        if(FT(bbox.max_coord(i)) < q[i] || FT(bbox.min_coord(i)) > r[i])
           return false;
       }
       else {
         if(q[i] <= r[i]) { // qrp
-          if(bbox.max_coord(i) < q[i] || bbox.min_coord(i) > p[i])
+          if(FT(bbox.max_coord(i)) < q[i] || FT(bbox.min_coord(i)) > p[i])
             return false;
         }
         else { // rqp
-          if(bbox.max_coord(i) < r[i] || bbox.min_coord(i) > p[i])
+          if(FT(bbox.max_coord(i)) < r[i] || FT(bbox.min_coord(i)) > p[i])
             return false;
         }
       }
@@ -397,9 +398,10 @@ do_intersect_bbox_or_iso_cuboid_impl(const std::array< std::array<FT, 3>, 3>& tr
 }
 
 template <class K, class Box3>
-bool do_intersect_bbox_or_iso_cuboid(const typename K::Triangle_3& a_triangle,
-                                     const Box3& a_bbox,
-                                     const K& k)
+typename K::Boolean
+do_intersect_bbox_or_iso_cuboid(const typename K::Triangle_3& a_triangle,
+                                const Box3& a_bbox,
+                                const K& k)
 {
   if(certainly_not(do_bbox_intersect<K>(a_triangle, a_bbox)))
     return false;
@@ -423,22 +425,23 @@ bool do_intersect_bbox_or_iso_cuboid(const typename K::Triangle_3& a_triangle,
     { a_triangle[2][0], a_triangle[2][1], a_triangle[2][2] }
   }};
 
-  // exception will be thrown in case the output is indeterminate
   return do_intersect_bbox_or_iso_cuboid_impl<FT>(triangle, a_bbox, do_axis_intersect_aux_impl);
 }
 
 template <class K>
-bool do_intersect(const typename K::Triangle_3& triangle,
-                  const CGAL::Bbox_3& bbox,
-                  const K& k)
+typename K::Boolean
+do_intersect(const typename K::Triangle_3& triangle,
+             const CGAL::Bbox_3& bbox,
+             const K& k)
 {
   return do_intersect_bbox_or_iso_cuboid(triangle, bbox, k);
 }
 
 template <class K>
-bool do_intersect(const CGAL::Bbox_3& bbox,
-                  const typename K::Triangle_3& triangle,
-                  const K& k)
+typename K::Boolean
+do_intersect(const CGAL::Bbox_3& bbox,
+             const typename K::Triangle_3& triangle,
+             const K& k)
 {
   return do_intersect_bbox_or_iso_cuboid(triangle, bbox, k);
 }

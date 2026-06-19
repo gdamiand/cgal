@@ -37,7 +37,6 @@
 #include <boost/bimap/multiset_of.hpp>
 #include <CGAL/boost/iterator/transform_iterator.hpp>
 #include <boost/iterator/iterator_adaptor.hpp>
-#include <boost/mpl/if.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/is_same.hpp>
@@ -131,7 +130,7 @@ namespace CGAL {
       }; // end class template C3t3_helper_class
 
     } // end namespace SMDS_3::details
-  } //end namesapce SMDS_3
+  } //end namespace SMDS_3
 
 /*!
   \ingroup PkgSMDS3Classes
@@ -151,7 +150,7 @@ namespace CGAL {
   vertex and cell base class are models of the concepts
   `SimplicialMeshVertexBase_3` and `SimplicialMeshCellBase_3`, respectively.
 
-  \tparam  CornerIndex Type of indices for corners (i.e.\f$ 0\f$--dimensional features)
+  \tparam CornerIndex Type of indices for corners (i.e.\f$ 0\f$--dimensional features)
   of the discretized geometric domain.
   It must be a model of `CopyConstructible`, `Assignable`, `DefaultConstructible` and
   `LessThanComparable`.
@@ -167,10 +166,10 @@ namespace CGAL {
   of the `MeshDomainWithFeatures_3` concept when used for mesh generation.
 
   Those two last template parameters default to `int`, so that they can be ignored
-  if the domain used for mesh generation does not include 0 and 1-dimensionnal features (i.e
+  if the domain used for mesh generation does not include 0 and 1-dimensional features (i.e
   is only a model of the concept `MeshDomain_3`).
 
-  \cgalModels `MeshComplexWithFeatures_3InTriangulation_3`
+  \cgalModels{MeshComplexWithFeatures_3InTriangulation_3}
 
   \sa \link make_mesh_3() `CGAL::make_mesh_3()`\endlink
   \sa \link refine_mesh_3() `CGAL::refine_mesh_3()`\endlink
@@ -298,7 +297,7 @@ public:
   Mesh_complex_3_in_triangulation_3(Self&& rhs);
 
   /**
-  * Assignement operator, also serves as move-assignement
+  * Assignment operator, also serves as move-assignment
   */
   Self& operator=(Self rhs)
   {
@@ -329,12 +328,18 @@ public:
   const Triangulation& triangulation() const { return tr_; }
 /// @}
 
+#ifndef DOXYGEN_RUNNING
 /// \name Non const access
 /// @{
     /// returns a reference to the triangulation
+    /// \cgalAdvancedBegin
+    /// This function should only be used by advanced users: it merely swaps the triangulation without
+    /// rebuilding critical C3T3 information such as the number of simplexes in complex.
+    /// On the other hand, this is performed by `set_triangulation()`
+    /// \cgalAdvancedEnd
   Triangulation& triangulation() { return tr_; }
 /// @}
-
+#endif
 
 /// \name Modifiers
 /// @{
@@ -350,6 +355,21 @@ public:
     edges_.clear();
     corners_.clear();
     far_vertices_.clear();
+  }
+
+  /** sets the internal triangulation to \p tr
+  */
+  void set_triangulation(const Triangulation& tr)
+  {
+    tr_ = tr;
+    rescan_after_load_of_triangulation();
+  }
+  /** sets the internal triangulation to \p tr
+  */
+  void set_triangulation(Triangulation&& tr)
+  {
+    tr_ = std::move(tr);
+    rescan_after_load_of_triangulation();
   }
 
   /** adds cell \p cell to the 3D complex, with subdomain index \p index
@@ -445,8 +465,8 @@ public:
    */
   void remove_from_complex(const Vertex_handle& v)
   {
-    corners_.erase(v);
     v->set_dimension(-1);
+    corners_.erase(v);
   }
 
   /** sets the index of vertex \p vertex to \p index
@@ -640,7 +660,7 @@ public:
     but are isolated from the complex at the end of the meshing process.
 
     This function removes these so-called \em isolated vertices, that belong to the
-    triangulation but not to any cell of the `C3T3`, from the triangulation.
+    triangulation but not to any simplex of the `C3T3`, from the triangulation.
   */
   void remove_isolated_vertices()
   {
@@ -669,7 +689,8 @@ public:
     std::vector<Vertex_handle> isolated;
     for (Vertex_handle v : tr.finite_vertex_handles())
     {
-      if (v->meshing_info() == 0.)
+      if (v->meshing_info() == 0.
+        && (v->in_dimension() > 1 || v->in_dimension() < 0))
         isolated.push_back(v);
     }
 
@@ -780,7 +801,7 @@ public:
   }
 
   /**
-   * returns true if \p v is a 0-dimensionnal feature in the complex
+   * returns true if \p v is a 0-dimensional feature in the complex
    */
   bool is_in_complex(const Vertex_handle& v) const
   {
@@ -973,7 +994,7 @@ private:
     typedef typename  Vertex_map_iterator_first::reference  pointer;
     typedef typename iterator_adaptor_::reference           reference;
 
-    Vertex_map_iterator_first_dereference() : Self::iterator_adaptor_() { }
+    Vertex_map_iterator_first_dereference() = default;
 
     template < typename Iterator >
     Vertex_map_iterator_first_dereference(Iterator i)
@@ -983,7 +1004,7 @@ private:
     pointer operator->() const { return *(this->base()); }
     reference operator*() const { return **(this->base()); }
 
-    operator Vertex_handle() { return Vertex_handle(*(this->base())); }
+    operator const Vertex_handle&() const { return *(this->base()); }
   };
 
 public:
@@ -1048,13 +1069,13 @@ public:
     Self operator++(int) { Self tmp(*this); ++(*this); return tmp; }
     Self operator--(int) { Self tmp(*this); --(*this); return tmp; }
 
-    operator Cell_handle() const { return Cell_handle(this->base()); }
+    operator const Cell_handle&() const { return this->base(); }
   }; // end class Cells_in_complex_iterator
 
-  typedef Iterator_range<Prevent_deref<Vertices_in_complex_iterator> > Vertices_in_complex;
-  typedef Iterator_range<Edges_in_complex_iterator>                    Edges_in_complex;
-  typedef Iterator_range<Facets_in_complex_iterator>                   Facets_in_complex;
-  typedef Iterator_range<Prevent_deref<Cells_in_complex_iterator> >    Cells_in_complex;
+  typedef Iterator_range<Prevent_deref<Vertices_in_complex_iterator, const Vertex_handle&>> Vertices_in_complex;
+  typedef Iterator_range<Edges_in_complex_iterator> Edges_in_complex;
+  typedef Iterator_range<Facets_in_complex_iterator> Facets_in_complex;
+  typedef Iterator_range<Prevent_deref<Cells_in_complex_iterator, const Cell_handle&>> Cells_in_complex;
 
 #endif
 
@@ -1093,8 +1114,7 @@ public:
   }
 
   /// returns a `Facets_in_complex_iterator` to the first facet of the 2D complex
-  Facets_in_complex_iterator
-    facets_in_complex_begin(const Surface_patch_index& index) const
+  Facets_in_complex_iterator facets_in_complex_begin(const Surface_patch_index& index) const
   {
     return CGAL::filter_iterator(tr_.finite_facets_end(),
       Facet_iterator_not_in_complex(*this, index),
@@ -1162,8 +1182,7 @@ public:
   */
   Vertices_in_complex vertices_in_complex() const
   {
-    return make_prevent_deref_range(vertices_in_complex_begin(),
-                                    vertices_in_complex_end());
+      return { vertices_in_complex_begin(), vertices_in_complex_end() };
   }
   /*!
     returns a range of iterators over the edges of the 1D complex,
@@ -1193,8 +1212,7 @@ public:
   */
   Cells_in_complex cells_in_complex() const
   {
-    return make_prevent_deref_range(cells_in_complex_begin(),
-                                    cells_in_complex_end());
+    return { cells_in_complex_begin(), cells_in_complex_end() };
   }
 ///  @}
 
@@ -1422,28 +1440,32 @@ public:
     }
   }
 
-  void clear_cells_and_facets_from_c3t3() {
-    for (typename Tr::Finite_cells_iterator
-      cit = this->triangulation().finite_cells_begin(),
-      end = this->triangulation().finite_cells_end();
-      cit != end; ++cit)
+  void clear_cells_and_facets_from_c3t3()
+  {
+    //clear cells
+    for (typename Tr::All_cells_iterator cit = this->triangulation().all_cells_begin();
+         cit != this->triangulation().all_cells_end();
+         ++cit)
     {
       set_subdomain_index(cit, Subdomain_index());
     }
     this->number_of_cells_ = 0;
-    for (typename Tr::Finite_facets_iterator
-      fit = this->triangulation().finite_facets_begin(),
-      end = this->triangulation().finite_facets_end();
-      fit != end; ++fit)
+
+    //clear facets
+    for (typename Tr::All_facets_iterator fit = this->triangulation().all_facets_begin();
+         fit != this->triangulation().all_facets_end();
+         ++fit)
     {
-      Facet facet = *fit;
+      const auto& facet = *fit;
       set_surface_patch_index(facet.first, facet.second, Surface_patch_index());
       if (this->triangulation().dimension() > 2) {
-        Facet mirror = tr_.mirror_facet(facet);
+        const Facet& mirror = tr_.mirror_facet(facet);
         set_surface_patch_index(mirror.first, mirror.second, Surface_patch_index());
       }
     }
     this->number_of_facets_ = 0;
+
+    //clear manifold info
     clear_manifold_info();
   }
 
@@ -1461,7 +1483,7 @@ public:
 private:
   // Sequential: non-atomic
   // "dummy" is here to allow the specialization (see below)
-  // See http://groups.google.com/group/comp.lang.c++.moderated/browse_thread/thread/285ab1eec49e1cb6
+  // See https://groups.google.com/group/comp.lang.c++.moderated/browse_thread/thread/285ab1eec49e1cb6
   template<typename Concurrency_tag2, typename dummy = void>
   struct Number_of_elements
   {
@@ -1532,7 +1554,7 @@ private:
 private:
   void init_manifold_info() const
   {
-    for (typename Tr::All_vertices_iterator
+    for (typename Tr::Finite_vertices_iterator
       vit = triangulation().finite_vertices_begin(),
       end = triangulation().finite_vertices_end();
       vit != end; ++vit)
@@ -1729,7 +1751,7 @@ Mesh_complex_3_in_triangulation_3()
   , manifold_info_initialized_(false) //TODO: parallel!
 {
   // We don't put it in the initialization list because
-  // std::atomic has no contructors
+  // std::atomic has no constructors
   number_of_facets_ = 0;
   number_of_cells_ = 0;
 }
@@ -2032,6 +2054,7 @@ Mesh_complex_3_in_triangulation_3<Tr,CI_,CSI_>::
 rescan_after_load_of_triangulation()
 {
   corners_.clear();
+  far_vertices_.clear();
   for(typename Tr::Finite_vertices_iterator
         vit = this->triangulation().finite_vertices_begin(),
         end = this->triangulation().finite_vertices_end();
@@ -2039,6 +2062,8 @@ rescan_after_load_of_triangulation()
   {
     if ( vit->in_dimension() == 0 ) {
       add_to_complex(vit, Corner_index(1));
+    } else if(vit->in_dimension() == -1) {
+      far_vertices_.push_back(vit);
     }
   }
 

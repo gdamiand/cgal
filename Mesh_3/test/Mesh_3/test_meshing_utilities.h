@@ -27,25 +27,23 @@
 #include <CGAL/optimize_mesh_3.h>
 #include <CGAL/remove_far_points_in_mesh_3.h>
 
+#include <CGAL/SMDS_3/Dump_c3t3.h>
 #include <CGAL/Mesh_3/Triangle_accessor_primitive.h>
 #include <CGAL/Triangle_accessor_3.h>
 #include <CGAL/AABB_tree.h>
-#include <CGAL/AABB_traits.h>
+#include <CGAL/AABB_traits_3.h>
 
 #include <CGAL/disable_warnings.h>
 
 #include <limits>
-#include <vector>
 #include <boost/optional/optional_io.hpp>
 
 // IO
-#include <fstream>
 #include <iostream>
 
-#include <climits>
 #define STD_SIZE_T_MAX UINT_MAX
 
-struct Bissection_tag {};
+struct Bisection_tag {};
 struct Polyhedral_tag {};
 
 // Verify that the time stamps of vertices and cells are strictly
@@ -71,6 +69,8 @@ void verify_time_stamps(const C3t3& c3t3, CGAL::Sequential_tag) {
       assert(prev->time_stamp() < cit->time_stamp());
     }
   }
+  assert(tds.vertices().check_timestamps_are_valid());
+  assert(tds.cells().check_timestamps_are_valid());
 }
 
 // Do not verify time stamps in parallel mode
@@ -153,7 +153,7 @@ struct Tester
     // Quality should increase
     C3t3 exude_c3t3(c3t3);
     std::cerr << "Exude...\n";
-    CGAL::exude_mesh_3(exude_c3t3);
+    CGAL::exude_mesh_3(exude_c3t3, CGAL::parameters::time_limit = 0);
     verify_c3t3(exude_c3t3,domain,domain_type,v,v,f,f);
     verify_c3t3_quality(c3t3,exude_c3t3);
     verify_c3t3_volume(exude_c3t3, volume*0.95, volume*1.05);
@@ -164,7 +164,7 @@ struct Tester
     // Quality should increase
     C3t3 perturb_c3t3(c3t3);
     std::cerr << "Perturb...\n";
-    CGAL::perturb_mesh_3(perturb_c3t3, domain, CGAL::parameters::time_limit=5);
+    CGAL::perturb_mesh_3(perturb_c3t3, domain, CGAL::parameters::time_limit =5);
     verify_c3t3(perturb_c3t3,domain,domain_type,v,v);
     verify_c3t3_quality(c3t3,perturb_c3t3);
     verify_c3t3_volume(perturb_c3t3, volume*0.95, volume*1.05);
@@ -206,9 +206,14 @@ struct Tester
     //-------------------------------------------------------
     // Verifications
     //-------------------------------------------------------
-    std::cerr << "\tNumber of cells: " << c3t3.number_of_cells_in_complex() << "\n";
-    std::cerr << "\tNumber of facets: " << c3t3.number_of_facets_in_complex() << "\n";
-    std::cerr << "\tNumber of vertices: " << c3t3.triangulation().number_of_vertices() << "\n";
+    std::cerr << "\tNumber of cells: " << c3t3.number_of_cells_in_complex()
+              << "  (expected in [" << min_cells_expected << ", " << max_cells_expected << "])\n";
+    std::cerr << "\tNumber of facets: " << c3t3.number_of_facets_in_complex()
+              << "  (expected in [" << min_facets_expected << ", " << max_facets_expected << "])\n";
+    std::cerr << "\tNumber of vertices: " << c3t3.triangulation().number_of_vertices()
+              << "  (expected in [" << min_vertices_expected << ", " << max_vertices_expected << "])\n";
+
+    dump_c3t3(c3t3, "dump_c3t3");
 
     std::size_t dist_facets ( std::distance(c3t3.facets_in_complex_begin(),
                                             c3t3.facets_in_complex_end()) );
@@ -294,12 +299,12 @@ struct Tester
                                  const Polyhedral_tag) const
   {}
 
-  // For bissection domains, check the consistency between the subdomain
+  // For bisection domains, check the consistency between the subdomain
   // indices and the surface patch indices.
   template<typename C3t3, typename MeshDomain>
   void verify_c3t3_combinatorics(const C3t3& c3t3,
                                  const MeshDomain& domain,
-                                 const Bissection_tag) const
+                                 const Bisection_tag) const
   {
     typedef typename C3t3::Triangulation        Tr;
     typedef typename Tr::Facet                  Facet;
@@ -333,13 +338,13 @@ struct Tester
           else {
             std::cerr << "\nc1 circumcenter: " << tr.dual(c1);
             std::cerr << "\nc1 is in domain: "
-                      << domain.is_in_domain_object()(tr.dual(c1));
+                      << CGAL::IO::oformat(domain.is_in_domain_object()(tr.dual(c1)));
           }
           if(tr.is_infinite(c2)) std::cerr << "\nc2 is infinite";
           else {
             std::cerr << "\nc2 circumcenter: "<< tr.dual(c2);
             std::cerr << "\nc2 is in domain: "
-                      << domain.is_in_domain_object()(tr.dual(c2));
+                      <<  CGAL::IO::oformat(domain.is_in_domain_object()(tr.dual(c2)));
           }
           std::cerr << std::endl;
           assert(false);
@@ -348,11 +353,11 @@ struct Tester
     }
   }
 
-  // For bissection domains, do nothing.
+  // For bisection domains, do nothing.
   template<typename C3t3, typename MeshDomain>
   double compute_hausdorff_distance(const C3t3&,
                                     const MeshDomain&,
-                                    const Bissection_tag) const
+                                    const Bisection_tag) const
   {
     return 0.;
   }
@@ -381,7 +386,7 @@ struct Tester
         continue;
 
       max_sqd = (std::max)(max_sqd,
-        aabb_tree.squared_distance(CGAL::centroid(tr.triangle(f))));
+        CGAL::to_double(aabb_tree.squared_distance(CGAL::centroid(tr.triangle(f)))));
     }
     double hdist = std::sqrt(max_sqd);
     std::cout << "\tHausdorff distance to polyhedron is " << hdist << std::endl;
@@ -399,7 +404,7 @@ struct Tester
     // Parallel
     typedef typename C3t3::Concurrency_tag Concurrency_tag;
 
-    if (boost::is_convertible<Concurrency_tag, CGAL::Parallel_tag>::value)
+    if (std::is_convertible<Concurrency_tag, CGAL::Parallel_tag>::value)
       assert(hdist <= reference_value*4.);
     else
 #endif //CGAL_LINKED_WITH_TBB
@@ -409,7 +414,7 @@ struct Tester
   template<typename C3t3, typename MeshDomain>
   void verify_c3t3_hausdorff_distance(const C3t3&,
                                       const MeshDomain&,
-                                      const Bissection_tag,
+                                      const Bisection_tag,
                                       const double) const
   { //nothing to do
   }

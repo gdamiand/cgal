@@ -67,7 +67,8 @@ class Gmpzf :
   Handle_for<Gmpzf_rep>,
     boost::ordered_euclidian_ring_operators1< Gmpzf
   , boost::ordered_euclidian_ring_operators2< Gmpzf, int
-    > >
+  , boost::ordered_euclidian_ring_operators2< Gmpzf, double
+    > > >
 {
   typedef Handle_for<Gmpzf_rep> Base;
 
@@ -166,8 +167,8 @@ public:
     canonicalize();
   }
 
-  // arithmetics
-  // -----------
+  // arithmetic
+  // ----------
   Gmpzf operator+() const;
   Gmpzf operator-() const;
   Gmpzf& operator+=( const Gmpzf& b);
@@ -203,8 +204,8 @@ private:
 // implementation
 // ==============
 
-// arithmetics
-// -----------
+// arithmetic
+// ----------
 
 inline
 Gmpzf Gmpzf::operator+() const
@@ -571,6 +572,12 @@ inline
 bool operator>(const Gmpzf &a, int b)
 {
   return operator>(a, Gmpzf(b));
+}
+
+inline
+bool operator>(const Gmpzf &a, double d)
+{
+  return operator>(a, Gmpzf(d));
 }
 
 inline Gmpzf min BOOST_PREVENT_MACRO_SUBSTITUTION(const Gmpzf& x,const Gmpzf& y){

@@ -1,6 +1,7 @@
 Algebraic_foundations
 Arithmetic_kernel
 BGL
+CGAL_Core
 Cartesian_kernel
 Circulator
 Convex_hull_2
@@ -16,7 +17,6 @@ Intersections_2
 Intersections_3
 Interval_support
 Kernel_23
-Kernel_d
 Matrix_search
 Modifier
 Modular_arithmetic

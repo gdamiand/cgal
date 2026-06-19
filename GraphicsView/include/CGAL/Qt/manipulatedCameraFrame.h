@@ -12,6 +12,12 @@
 
 #ifndef QGLVIEWER_MANIPULATED_CAMERA_FRAME_H
 #define QGLVIEWER_MANIPULATED_CAMERA_FRAME_H
+
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 16
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wsfinae-incomplete"
+#endif
+
 #include <QTimer>
 
 #include <CGAL/export/Qt.h>
@@ -174,7 +180,7 @@ public:
 
   Default value is (0,1,0), but it is updated by the Camera when this object is
   set as its Camera::frame(). Camera::setOrientation() and
-  Camera::setUpVector()) direclty modify this value and should be used instead.
+  Camera::setUpVector()) directly modify this value and should be used instead.
 */
   Vec sceneUpVector() const { return sceneUpVector_; }
 
@@ -222,7 +228,7 @@ private:
   QTimer flyTimer_;
 
   bool rotatesAroundUpVector_;
-  // Inverse the direction of an horizontal mouse motion. Depends on the
+  // Inverse the direction of a horizontal mouse motion. Depends on the
   // projected screen orientation of the vertical axis when the mouse button is
   // pressed.
   bool constrainedRotationIsReversed_;
@@ -234,7 +240,12 @@ private:
 
 }} // namespace CGAL::qglviewer
 
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 16
+#  pragma GCC diagnostic pop
+#endif
+
 #ifdef CGAL_HEADER_ONLY
 //#include <CGAL/Qt/qglviewer_impl_list.h>
 #endif // CGAL_HEADER_ONLY
+
 #endif // QGLVIEWER_MANIPULATED_CAMERA_FRAME_H

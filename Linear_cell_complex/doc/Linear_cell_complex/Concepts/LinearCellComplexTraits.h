@@ -5,7 +5,9 @@
 
 Required types and functors for the `LinearCellComplexTraits` concept. This geometric traits concept is used in the \link CGAL::Linear_cell_complex_for_combinatorial_map `Linear_cell_complex_for_combinatorial_map`\endlink and \link CGAL::Linear_cell_complex_for_generalized_map `Linear_cell_complex_for_generalized_map`\endlink classes.
 
-\cgalHasModel \link CGAL::Linear_cell_complex_traits `CGAL::Linear_cell_complex_traits<d,K>`\endlink
+\cgalHasModelsBegin
+\cgalHasModelsBare{\link CGAL::Linear_cell_complex_traits `CGAL::Linear_cell_complex_traits<d\,K>`\endlink}
+\cgalHasModelsEnd
 
 \sa `CGAL::Linear_cell_complex_for_combinatorial_map<d,d2,LCCTraits,Items,Alloc>`
 \sa `CGAL::Linear_cell_complex_for_generalized_map<d,d2,LCCTraits,Items,Alloc>`
@@ -62,8 +64,8 @@ which constructs a vector as the difference of points `p2-p1`, and
 \link LinearCellComplexTraits::Vector ` Vector `\endlink `operator() (const CGAL::Origin&, const ` \link Point ` Point`\endlink`& p)`
 which constructs a vector as the difference of point `p` and a point at the origin
 (used in \link CGAL::barycenter `barycenter`\endlink
-and `CGAL::import_from_plane_graph`).
-*/
+and `CGAL::read_plane_graph_in_lcc`).*/
+
 typedef unspecified_type Construct_vector;
 
 /*!
@@ -102,7 +104,7 @@ a model of \link Kernel::Direction_2 `Direction_2`\endlink.
 typedef unspecified_type Direction_2;
 
 /*!
-a model of \link Kernel::ConstructDirection_2 `ConstructDirection_2`\endlink (used in `CGAL::import_from_plane_graph`).
+a model of \link Kernel::ConstructDirection_2 `ConstructDirection_2`\endlink (used in `CGAL::read_plane_graph_in_lcc`).
 */
 typedef unspecified_type Construct_direction_2;
 

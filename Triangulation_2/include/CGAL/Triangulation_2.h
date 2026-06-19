@@ -18,7 +18,7 @@
 
 #include <list>
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <algorithm>
 #include <utility>
 #include <iostream>
@@ -26,7 +26,7 @@
 #include <CGAL/iterator.h>
 #include <CGAL/function_objects.h>
 
-#include <CGAL/triangulation_assertions.h>
+#include <CGAL/assertions.h>
 #include <CGAL/Triangulation_utils_2.h>
 
 #include <CGAL/Triangulation_data_structure_2.h>
@@ -35,6 +35,7 @@
 #include <CGAL/Triangulation_2/internal/Triangulation_line_face_circulator_2.h>
 #include <CGAL/spatial_sort.h>
 #include <CGAL/Spatial_sort_traits_adapter_2.h>
+#include <CGAL/Kernel_23/internal/Projection_traits_3.h>
 
 #include <CGAL/double.h>
 
@@ -171,7 +172,7 @@ public:
     Self & operator--() { Base::operator--(); return *this; }
     Self operator++(int) { Self tmp(*this); ++(*this); return tmp; }
     Self operator--(int) { Self tmp(*this); --(*this); return tmp; }
-    operator Vertex_handle() const { return Base::base(); }
+    operator const Vertex_handle&() const { return Base::base(); }
   };
 
   class Finite_faces_iterator
@@ -186,7 +187,7 @@ public:
     Self & operator--() { Base::operator--(); return *this; }
     Self operator++(int) { Self tmp(*this); ++(*this); return tmp; }
     Self operator--(int) { Self tmp(*this); --(*this); return tmp; }
-    operator Face_handle() const { return Base::base(); }
+    operator const Face_handle&() const { return Base::base(); }
   };
 
   typedef Filter_iterator<All_edges_iterator,
@@ -213,8 +214,10 @@ public:
   typedef typename Tds::Vertex_handles         All_vertex_handles;
   typedef typename Tds::Edges                  All_edges;
 
-  typedef Iterator_range<Prevent_deref<Finite_faces_iterator> >    Finite_face_handles;
-  typedef Iterator_range<Prevent_deref<Finite_vertices_iterator> > Finite_vertex_handles;
+  typedef Iterator_range<Prevent_deref<Finite_faces_iterator,
+                                       const Face_handle&>>   Finite_face_handles;
+  typedef Iterator_range<Prevent_deref<Finite_vertices_iterator,
+                                       const Vertex_handle&>> Finite_vertex_handles;
   typedef Iterator_range<Finite_edges_iterator>                    Finite_edges;
   typedef Iterator_range<Point_iterator>                           Points;
 
@@ -254,7 +257,7 @@ public:
     insert(first,last);
   }
 
-  //Assignement
+  //Assignment
   Triangulation_2 &operator=(const Triangulation_2 &tr);
   Triangulation_2 &operator=(Triangulation_2 &&) = default;
 
@@ -291,6 +294,7 @@ public:
   bool is_infinite(const Edge& e) const;
   bool is_infinite(const Edge_circulator& ec) const;
   bool is_infinite(const All_edges_iterator& ei) const;
+  bool is_vertex(Vertex_handle va) const;
   bool is_edge(Vertex_handle va, Vertex_handle vb) const;
   bool is_edge(Vertex_handle va, Vertex_handle vb, Face_handle& fr,
                int & i) const;
@@ -319,6 +323,10 @@ public:
   Point_2 circumcenter(const Point& p0,
                        const Point& p1,
                        const Point& p2) const;
+
+  const Point& geometry(Vertex_handle v) const { return point(v); }
+  Segment geometry(const Edge& e) const { return segment(e); }
+  Triangle geometry(Face_handle f) const { return triangle(f); }
 
 
   //MOVE - INSERTION - DELETION - Flip
@@ -433,6 +441,81 @@ protected:
 
   bool has_inexact_negative_orientation(const Point &p, const Point &q,
                                         const Point &r) const;
+
+
+
+template <class T>
+inline
+bool
+projection_traits_has_inexact_negative_orientation(const Point &p, const Point &q, const Point &r,
+                                                   const T& ) const
+{
+  // So that this code works well with Lazy_kernel
+  internal::Static_filters_predicates::Get_approx<Point> get_approx;
+
+  const double px = to_double(get_approx(p).x());
+  const double py = to_double(get_approx(p).y());
+  const double qx = to_double(get_approx(q).x());
+  const double qy = to_double(get_approx(q).y());
+  const double rx = to_double(get_approx(r).x());
+  const double ry = to_double(get_approx(r).y());
+
+  const double pqx = qx - px;
+  const double pqy = qy - py;
+  const double prx = rx - px;
+  const double pry = ry - py;
+
+  return ( determinant(pqx, pqy, prx, pry) < 0);
+}
+
+template <class T>
+inline
+bool
+projection_traits_has_inexact_negative_orientation(const Point &p, const Point &q, const Point &r,
+                                                   const ::CGAL::internal::Projection_traits_3<T,0>& ) const
+{  // So that this code works well with Lazy_kernel
+  internal::Static_filters_predicates::Get_approx<Point> get_approx;
+
+  const double px = to_double(get_approx(p).y());
+  const double py = to_double(get_approx(p).z());
+  const double qx = to_double(get_approx(q).y());
+  const double qy = to_double(get_approx(q).z());
+  const double rx = to_double(get_approx(r).y());
+  const double ry = to_double(get_approx(r).z());
+
+  const double pqx = qx - px;
+  const double pqy = qy - py;
+  const double prx = rx - px;
+  const double pry = ry - py;
+
+  return ( determinant(pqx, pqy, prx, pry) < 0);
+}
+
+
+template <class T>
+inline
+bool
+projection_traits_has_inexact_negative_orientation(const Point &p, const Point &q, const Point &r,
+                                                   const ::CGAL::internal::Projection_traits_3<T,1>& ) const
+{  // So that this code works well with Lazy_kernel
+  internal::Static_filters_predicates::Get_approx<Point> get_approx;
+
+  const double px = to_double(get_approx(p).x());
+  const double py = to_double(get_approx(p).z());
+  const double qx = to_double(get_approx(q).x());
+  const double qy = to_double(get_approx(q).z());
+  const double rx = to_double(get_approx(r).x());
+  const double ry = to_double(get_approx(r).z());
+
+  const double pqx = qx - px;
+  const double pqy = qy - py;
+  const double prx = rx - px;
+  const double pry = ry - py;
+
+  return ( determinant(pqx, pqy, prx, pry) < 0);
+}
+
+
 
 public:
   Face_handle
@@ -632,7 +715,7 @@ public:
 template < class InputIterator >
 std::ptrdiff_t insert(InputIterator first, InputIterator last,
          std::enable_if_t<
-           boost::is_convertible<
+           std::is_convertible<
              typename std::iterator_traits<InputIterator>::value_type,
              Point
            >::value
@@ -697,7 +780,7 @@ public:
   insert(InputIterator first,
          InputIterator last,
          std::enable_if_t<
-           boost::is_convertible<
+           std::is_convertible<
              typename std::iterator_traits<InputIterator>::value_type,
              std::pair<Point,typename internal::Info_check<typename Tds::Vertex>::type>
            >::value >* = NULL)
@@ -710,10 +793,8 @@ public:
   insert(boost::zip_iterator< boost::tuple<InputIterator_1,InputIterator_2> > first,
          boost::zip_iterator< boost::tuple<InputIterator_1,InputIterator_2> > last,
          std::enable_if_t<
-           boost::mpl::and_<
-             boost::is_convertible< typename std::iterator_traits<InputIterator_1>::value_type, Point >,
-             boost::is_convertible< typename std::iterator_traits<InputIterator_2>::value_type, typename internal::Info_check<typename Tds::Vertex>::type >
-           >::value
+             std::is_convertible_v< typename std::iterator_traits<InputIterator_1>::value_type, Point > &&
+             std::is_convertible_v< typename std::iterator_traits<InputIterator_2>::value_type, typename internal::Info_check<typename Tds::Vertex>::type >
          >* = NULL)
   {
     return insert_with_info< boost::tuple<Point,typename internal::Info_check<typename Tds::Vertex>::type> >(first,last);
@@ -737,7 +818,7 @@ bool well_oriented(Vertex_handle v) const
 }
 
 bool from_convex_hull(Vertex_handle v) {
-  CGAL_triangulation_precondition(!is_infinite(v));
+  CGAL_precondition(!is_infinite(v));
   Vertex_circulator vc = incident_vertices(v), done(vc);
   do { if(is_infinite(vc)) return true; } while(++vc != done);
   return false;
@@ -787,7 +868,7 @@ Triangulation_2(const Triangulation_2 &tr)
   _infinite_vertex = _tds.copy_tds(tr._tds, tr.infinite_vertex());
 }
 
-//Assignement
+//Assignment
 template <class Gt, class Tds >
 Triangulation_2<Gt, Tds> &
 Triangulation_2<Gt, Tds>::
@@ -864,7 +945,7 @@ typename Triangulation_2<Gt,Tds>::Vertex_handle
 Triangulation_2<Gt,Tds>::
 finite_vertex() const
 {
-  CGAL_triangulation_precondition (number_of_vertices() >= 1);
+  CGAL_precondition (number_of_vertices() >= 1);
   return (finite_vertices_begin());
 }
 
@@ -911,7 +992,7 @@ is_valid(bool verbose, int level) const
                               << point(it3) << " are not collinear" << std::endl;
      }
 
-     CGAL_triangulation_assertion(result);
+     CGAL_assertion(result);
      ++it1 ; ++it2; ++it3;
     }
   }
@@ -919,7 +1000,7 @@ is_valid(bool verbose, int level) const
   {
     for(Finite_faces_iterator it=finite_faces_begin(); it!=finite_faces_end(); it++)
     {
-      CGAL_triangulation_assertion( ! is_infinite(it));
+      CGAL_assertion( ! is_infinite(it));
       Orientation s = orientation(point(it, 0), point(it, 1), point(it, 2));
       result = result && ( s == LEFT_TURN );
 
@@ -930,7 +1011,7 @@ is_valid(bool verbose, int level) const
                                << point(it, 2) << " form a badly oriented face" << std::endl;
       }
 
-      CGAL_triangulation_assertion(result);
+      CGAL_assertion(result);
     }
 
     Vertex_circulator start = incident_vertices(infinite_vertex());
@@ -940,7 +1021,7 @@ is_valid(bool verbose, int level) const
     do
     {
       Orientation s = orientation(point(pc), point(qc), point(rc));
-      CGAL_triangulation_assertion( s != LEFT_TURN );
+      CGAL_assertion( s != LEFT_TURN );
       result = result && ( s != LEFT_TURN );
 
       if(verbose && (s == LEFT_TURN))
@@ -966,7 +1047,7 @@ is_valid(bool verbose, int level) const
                 << " and degree(infinite_vertex()) = " << degree(infinite_vertex()) << std::endl;
     }
 
-    CGAL_triangulation_assertion( result);
+    CGAL_assertion( result);
   }
   return result;
 }
@@ -1018,6 +1099,14 @@ Triangulation_2<Gt, Tds>::
 is_infinite(const All_edges_iterator& ei) const
 {
   return is_infinite(*ei);
+}
+
+template <class Gt, class Tds >
+inline bool
+Triangulation_2<Gt, Tds>::
+is_vertex(Vertex_handle va) const
+{
+  return _tds.is_vertex(va);
 }
 
 template <class Gt, class Tds >
@@ -1108,9 +1197,9 @@ const typename Triangulation_2<Gt, Tds>::Point&
 Triangulation_2<Gt, Tds>::
 point(Face_handle f, int i) const
 {
-  CGAL_triangulation_precondition( dimension() >= 0 );
-  CGAL_triangulation_precondition( i >= 0 && i <= dimension() );
-  CGAL_triangulation_precondition( ! is_infinite(f->vertex(i)) );
+  CGAL_precondition( dimension() >= 0 );
+  CGAL_precondition( i >= 0 && i <= dimension() );
+  CGAL_precondition( ! is_infinite(f->vertex(i)) );
   return f->vertex(i)->point();
 }
 
@@ -1119,8 +1208,8 @@ const typename Triangulation_2<Gt, Tds>::Point&
 Triangulation_2<Gt, Tds>::
 point(Vertex_handle v) const
 {
-  CGAL_triangulation_precondition( dimension() >= 0 );
-  CGAL_triangulation_precondition( ! is_infinite(v) );
+  CGAL_precondition( dimension() >= 0 );
+  CGAL_precondition( ! is_infinite(v) );
   return v->point();
 }
 
@@ -1129,7 +1218,7 @@ typename Triangulation_2<Gt, Tds>::Segment
 Triangulation_2<Gt, Tds>::
 segment(Face_handle f, int i) const
 {
-  CGAL_triangulation_precondition( ! is_infinite(f,i));
+  CGAL_precondition( ! is_infinite(f,i));
   typename Gt::Construct_segment_2
       construct_segment = geom_traits().construct_segment_2_object();
   return construct_segment(construct_point(f->vertex(ccw(i))->point()),
@@ -1141,7 +1230,7 @@ typename Triangulation_2<Gt, Tds>::Segment
 Triangulation_2<Gt, Tds>::
 segment(const Edge& e) const
 {
-  CGAL_triangulation_precondition(! is_infinite(e));
+  CGAL_precondition(! is_infinite(e));
   typename Gt::Construct_segment_2
       construct_segment = geom_traits().construct_segment_2_object();
   return construct_segment(construct_point(e.first->vertex(ccw(e.second))->point()),
@@ -1177,7 +1266,7 @@ typename Triangulation_2<Gt, Tds>::Triangle
 Triangulation_2<Gt, Tds>::
 triangle(Face_handle f) const
 {
-  CGAL_triangulation_precondition( ! is_infinite(f) );
+  CGAL_precondition( ! is_infinite(f) );
   typename Gt::Construct_triangle_2
       construct_triangle = geom_traits().construct_triangle_2_object();
   return construct_triangle(construct_point(f->vertex(0)->point()),
@@ -1190,13 +1279,13 @@ void
 Triangulation_2<Gt, Tds>::
 flip(Face_handle f, int i)
 {
-  CGAL_triangulation_precondition ( f != Face_handle() );
-  CGAL_triangulation_precondition (i == 0 || i == 1 || i == 2);
-  CGAL_triangulation_precondition( dimension()==2);
+  CGAL_precondition ( f != Face_handle() );
+  CGAL_precondition (i == 0 || i == 1 || i == 2);
+  CGAL_precondition( dimension()==2);
 
-  CGAL_triangulation_precondition( !is_infinite(f) &&
+  CGAL_precondition( !is_infinite(f) &&
                                    !is_infinite(f->neighbor(i)) );
-  CGAL_triangulation_precondition(
+  CGAL_precondition(
         orientation(f->vertex(i)->point(),
                     f->vertex(cw(i))->point(),
                     mirror_vertex(f,i)->point()) == RIGHT_TURN &&
@@ -1212,7 +1301,7 @@ typename Triangulation_2<Gt,Tds>::Vertex_handle
 Triangulation_2<Gt,Tds>::
 insert_first(const Point& p)
 {
-  CGAL_triangulation_precondition(number_of_vertices() == 0);
+  CGAL_precondition(number_of_vertices() == 0);
   Vertex_handle v = _tds.insert_second();
   v->set_point(p);
   return v;
@@ -1223,7 +1312,7 @@ typename Triangulation_2<Gt,Tds>::Vertex_handle
 Triangulation_2<Gt,Tds>::
 insert_second(const Point& p)
 {
-  CGAL_triangulation_precondition(number_of_vertices() == 1);
+  CGAL_precondition(number_of_vertices() == 1);
    Vertex_handle v = _tds.insert_dim_up(infinite_vertex(), true);
    v->set_point(p);
    return v;
@@ -1234,7 +1323,7 @@ typename Triangulation_2<Gt,Tds>::Vertex_handle
 Triangulation_2<Gt,Tds>::
 insert_in_edge(const Point& p, Face_handle f,int i)
 {
- CGAL_triangulation_exactness_precondition(
+ CGAL_exactness_precondition(
         orientation(f->vertex(cw(i))->point(), p,
         f->vertex(ccw(i))->point()) == COLLINEAR &&
         collinear_between(f->vertex(cw(i))->point(), p,
@@ -1249,7 +1338,7 @@ typename Triangulation_2<Gt,Tds>::Vertex_handle
 Triangulation_2<Gt,Tds>::
 insert_in_face(const Point& p, Face_handle f)
 {
-  CGAL_triangulation_precondition(oriented_side(f,p) == ON_POSITIVE_SIDE);
+  CGAL_precondition(oriented_side(f,p) == ON_POSITIVE_SIDE);
   Vertex_handle v= _tds.insert_in_face(f);
   v->set_point(p);
   return v;
@@ -1260,7 +1349,7 @@ typename Triangulation_2<Gt,Tds>::Vertex_handle
 Triangulation_2<Gt,Tds>::
 insert_outside_convex_hull(const Point& p, Face_handle f)
 {
-  CGAL_triangulation_precondition(is_infinite(f) && dimension() >= 1);
+  CGAL_precondition(is_infinite(f) && dimension() >= 1);
   Vertex_handle v;
   if (dimension() == 1)
     v=insert_outside_convex_hull_1(p, f);
@@ -1276,8 +1365,8 @@ typename Triangulation_2<Gt,Tds>::Vertex_handle
 Triangulation_2<Gt,Tds>::
 insert_outside_convex_hull_1(const Point& p, Face_handle f)
 {
-  CGAL_triangulation_precondition( is_infinite(f) && dimension()==1);
-  CGAL_triangulation_precondition(
+  CGAL_precondition( is_infinite(f) && dimension()==1);
+  CGAL_precondition(
         orientation(mirror_vertex(f, f->index(infinite_vertex()))->point(),
                     f->vertex(1- f->index(infinite_vertex()))->point(),
                     p) == COLLINEAR &&
@@ -1294,11 +1383,11 @@ typename Triangulation_2<Gt,Tds>::Vertex_handle
 Triangulation_2<Gt,Tds>::
 insert_outside_convex_hull_2(const Point& p, Face_handle f)
 {
-  CGAL_triangulation_precondition(is_infinite(f));
+  CGAL_precondition(is_infinite(f));
 
   int li = f->index(infinite_vertex());
 
-  CGAL_triangulation_precondition(
+  CGAL_precondition(
         orientation(p,
                     f->vertex(ccw(li))->point(),
                     f->vertex(cw(li))->point()) == LEFT_TURN);
@@ -1359,14 +1448,14 @@ typename Triangulation_2<Gt,Tds>::Vertex_handle
 Triangulation_2<Gt,Tds>::
 insert_outside_affine_hull(const Point& p)
 {
-  CGAL_triangulation_precondition(dimension() < 2);
+  CGAL_precondition(dimension() < 2);
   bool conform = false;
   if (dimension() == 1) {
     Face_handle f = (*finite_edges_begin()).first;
     Orientation orient = orientation( f->vertex(0)->point(),
                                       f->vertex(1)->point(),
                                       p);
-    CGAL_triangulation_precondition(orient != COLLINEAR);
+    CGAL_precondition(orient != COLLINEAR);
     conform = ( orient == COUNTERCLOCKWISE);
   }
   Vertex_handle v = _tds.insert_dim_up( infinite_vertex(), conform);
@@ -1389,7 +1478,7 @@ template <class Gt, class Tds >
 typename Triangulation_2<Gt,Tds>::Vertex_handle
 Triangulation_2<Gt,Tds>::
 insert(const Point& p, Locate_type lt, Face_handle loc, int li)
-  // insert a point p, whose localisation is known (lt, f, i)
+  // insert a point p, whose localization is known (lt, f, i)
 {
   if(number_of_vertices() == 0) {
     return(insert_first(p));
@@ -1412,7 +1501,7 @@ insert(const Point& p, Locate_type lt, Face_handle loc, int li)
   case VERTEX:
     return loc->vertex(li);
   }
-  CGAL_triangulation_assertion(false); // locate step failed
+  CGAL_assertion(false); // locate step failed
   return Vertex_handle();
 }
 
@@ -1459,8 +1548,8 @@ void
 Triangulation_2<Gt,Tds>::
 remove(Vertex_handle v)
 {
-  CGAL_triangulation_precondition( v != Vertex_handle());
-  CGAL_triangulation_precondition( !is_infinite(v));
+  CGAL_precondition( v != Vertex_handle());
+  CGAL_precondition( !is_infinite(v));
 
   if  (number_of_vertices() == 1)
     remove_first(v);
@@ -1491,7 +1580,7 @@ test_dim_down(Vertex_handle v) const
   //it goes down to 1 iff
   // 1) any finite face is incident to v
   // 2) all vertices are collinear
-  CGAL_triangulation_precondition(dimension() == 2);
+  CGAL_precondition(dimension() == 2);
   bool dim1 = true;
   Finite_faces_iterator fit = finite_faces_begin();
   while (dim1==true && fit != finite_faces_end()) {
@@ -1592,8 +1681,8 @@ void
 Triangulation_2<Gt,Tds>::
 remove_and_give_new_faces(Vertex_handle v, OutputItFaces fit)
 {
-  CGAL_triangulation_precondition( v != Vertex_handle());
-  CGAL_triangulation_precondition( !is_infinite(v));
+  CGAL_precondition( v != Vertex_handle());
+  CGAL_precondition( !is_infinite(v));
 
   if(number_of_vertices() == 1) remove_first(v);
   else if(number_of_vertices() == 2) remove_second(v);
@@ -1696,7 +1785,7 @@ Triangulation_2<Gt, Tds>::
 fill_hole(Vertex_handle v, std::list< Edge > & hole)
 {
   // uses the fact that the hole is starshaped
-  // with repect to v->point()
+  // with respect to v->point()
   typedef std::list<Edge> Hole;
 
   Face_handle ff, fn;
@@ -1803,7 +1892,7 @@ fill_hole(Vertex_handle v, std::list< Edge > & hole)
   // now hole has three edges
   typename Hole::iterator hit;
   hit = hole.begin();
-//  // I don't know why the following yelds a segmentation fault
+//  // I don't know why the following yields a segmentation fault
 //  create_face( (*hit).first, (*hit).second,
 //               (* ++hit).first, (*hit).second,
 //               (* ++hit).first, (*hit).second);
@@ -1821,7 +1910,7 @@ Triangulation_2<Gt,Tds>::
 fill_hole(Vertex_handle v, std::list<Edge> & hole, OutputItFaces fit)
 {
   // uses the fact that the hole is starshaped
-  // with repect to v->point()
+  // with respect to v->point()
   typedef std::list<Edge> Hole;
 
   Face_handle ff, fn;
@@ -1928,7 +2017,7 @@ fill_hole(Vertex_handle v, std::list<Edge> & hole, OutputItFaces fit)
   // now hole has three edges
   typename Hole::iterator hit;
   hit = hole.begin();
-//  // I don't know why the following yelds a segmentation fault
+//  // I don't know why the following yields a segmentation fault
 //  create_face( (*hit).first, (*hit).second,
 //               (* ++hit).first, (*hit).second,
 //               (* ++hit).first, (*hit).second);
@@ -2189,7 +2278,7 @@ typename Triangulation_2<Gt,Tds>::Vertex_handle
 Triangulation_2<Gt,Tds>::
 move_if_no_collision(Vertex_handle v, const Point &p)
 {
-  CGAL_triangulation_precondition(!is_infinite(v));
+  CGAL_precondition(!is_infinite(v));
   if(v->point() == p) return v;
 
   const int dim = dimension();
@@ -2220,7 +2309,7 @@ move_if_no_collision(Vertex_handle v, const Point &p)
       Face_handle f = v->face();
       int i = f->index(v);
       if (i==0) {f = f->neighbor(1);}
-      CGAL_triangulation_assertion(f->index(v) == 1);
+      CGAL_assertion(f->index(v) == 1);
       Face_handle g= f->neighbor(0);
       f->set_vertex(1, g->vertex(1));
       f->set_neighbor(0,g->neighbor(0));
@@ -2230,7 +2319,7 @@ move_if_no_collision(Vertex_handle v, const Point &p)
       Face_handle f_ins = inserted->face();
       i = f_ins->index(inserted);
       if (i==0) {f_ins = f_ins->neighbor(1);}
-      CGAL_triangulation_assertion(f_ins->index(inserted) == 1);
+      CGAL_assertion(f_ins->index(inserted) == 1);
       Face_handle g_ins = f_ins->neighbor(0);
       f_ins->set_vertex(1, v);
       g_ins->set_vertex(0, v);
@@ -2292,7 +2381,7 @@ typename Triangulation_2<Gt,Tds>::Vertex_handle
 Triangulation_2<Gt,Tds>::
 move(Vertex_handle v, const Point &p)
 {
-  CGAL_triangulation_precondition(!is_infinite(v));
+  CGAL_precondition(!is_infinite(v));
   if(v->point() == p) return v;
   Vertex_handle w = move_if_no_collision(v,p);
   if(w != v) {
@@ -2310,7 +2399,7 @@ move_if_no_collision_and_give_new_faces(Vertex_handle v,
                                             const Point &p,
                                         OutputItFaces oif)
 {
-  CGAL_triangulation_precondition(!is_infinite(v));
+  CGAL_precondition(!is_infinite(v));
   if(v->point() == p) return v;
   const int dim = this->dimension();
 
@@ -2346,7 +2435,7 @@ move_if_no_collision_and_give_new_faces(Vertex_handle v,
       Face_handle f = v->face();
       int i = f->index(v);
       if (i==0) {f = f->neighbor(1);}
-      CGAL_triangulation_assertion(f->index(v) == 1);
+      CGAL_assertion(f->index(v) == 1);
       Face_handle g= f->neighbor(0);
       f->set_vertex(1, g->vertex(1));
       f->set_neighbor(0,g->neighbor(0));
@@ -2357,7 +2446,7 @@ move_if_no_collision_and_give_new_faces(Vertex_handle v,
       Face_handle f_ins = inserted->face();
       i = f_ins->index(inserted);
       if (i==0) {f_ins = f_ins->neighbor(1);}
-      CGAL_triangulation_assertion(f_ins->index(inserted) == 1);
+      CGAL_assertion(f_ins->index(inserted) == 1);
       Face_handle g_ins = f_ins->neighbor(0);
       f_ins->set_vertex(1, v);
       g_ins->set_vertex(0, v);
@@ -2579,7 +2668,7 @@ march_locate_1D(const Point& t,
       return (*eit).first;
     }
   }
-  CGAL_triangulation_assertion(false);
+  CGAL_assertion(false);
   return Face_handle();
 }
 
@@ -2591,7 +2680,7 @@ march_locate_2D_LFC(Face_handle start,
                     Locate_type& lt,
                     int& li) const
 {
-  //    CGAL_triangulation_precondition( ! is_infinite(start) );
+  //    CGAL_precondition( ! is_infinite(start) );
   const Point& p = start->vertex(0)->point();
   const Point& q = start->vertex(1)->point();
   const Point& r = start->vertex(2)->point();
@@ -2669,7 +2758,7 @@ march_locate_2D_LFC(Face_handle start,
       }
     } while (--fc != done);
     //should not arrive there;
-    CGAL_triangulation_assertion(fc != done);
+    CGAL_assertion(fc != done);
   }
 
   while(! lfc.locate(t, lt, li) ){
@@ -2713,7 +2802,7 @@ compare_walks(const Point& p,
     show_face(c2);
     std::cerr << std::endl;
   }
-  CGAL_triangulation_assertion(b);
+  CGAL_assertion(b);
 }
 
 
@@ -2726,7 +2815,7 @@ march_locate_2D(Face_handle c,
                 Locate_type& lt,
                 int& li) const
 {
-  CGAL_triangulation_assertion(! is_infinite(c));
+  CGAL_assertion(! is_infinite(c));
 
   boost::rand48 rng;
 
@@ -2902,7 +2991,7 @@ march_locate_2D(Face_handle c,
                 Locate_type& lt,
                 int& li) const
 {
-  CGAL_triangulation_assertion(! is_infinite(c));
+  CGAL_assertion(! is_infinite(c));
 
   boost::uniform_smallint<> three(0, 2);
   boost::variate_generator<boost::rand48&, boost::uniform_smallint<> > die3(rng, three);
@@ -2926,7 +3015,7 @@ march_locate_2D(Face_handle c,
     const Point & p0 = c->vertex( i )->point();
     const Point & p1 = c->vertex( ccwi )->point();
     Orientation o0, o1, o2;
-    CGAL_triangulation_assertion(orientation(p0,p1,c->vertex( cwi )->point())==POSITIVE);
+    CGAL_assertion(orientation(p0,p1,c->vertex( cwi )->point())==POSITIVE);
     if(c->neighbor(cwi) == prev){
       o0 = POSITIVE;
     } else {
@@ -3154,6 +3243,7 @@ inexact_locate(const Point & t, Face_handle start, int n_of_turns) const
   return c;
 }
 
+
 template <class Gt, class Tds >
 inline
 bool
@@ -3161,22 +3251,8 @@ Triangulation_2<Gt, Tds>::
 has_inexact_negative_orientation(const Point &p, const Point &q,
                                  const Point &r) const
 {
-  // So that this code works well with Lazy_kernel
-  internal::Static_filters_predicates::Get_approx<Point> get_approx;
-
-  const double px = to_double(get_approx(p).x());
-  const double py = to_double(get_approx(p).y());
-  const double qx = to_double(get_approx(q).x());
-  const double qy = to_double(get_approx(q).y());
-  const double rx = to_double(get_approx(r).x());
-  const double ry = to_double(get_approx(r).y());
-
-  const double pqx = qx - px;
-  const double pqy = qy - py;
-  const double prx = rx - px;
-  const double pry = ry - py;
-
-  return ( determinant(pqx, pqy, prx, pry) < 0);
+  Gt gt;
+  return projection_traits_has_inexact_negative_orientation(p,q,r,gt);
 }
 #endif
 
@@ -3206,7 +3282,7 @@ typename Triangulation_2<Gt, Tds>::Finite_face_handles
 Triangulation_2<Gt, Tds>::
 finite_face_handles() const
 {
-  return make_prevent_deref_range(finite_faces_begin(),finite_faces_end());
+  return { finite_faces_begin(), finite_faces_end() };
 }
 
 template <class Gt, class Tds >
@@ -3235,7 +3311,7 @@ typename Triangulation_2<Gt, Tds>::Finite_vertex_handles
 Triangulation_2<Gt, Tds>::
 finite_vertex_handles() const
 {
-  return make_prevent_deref_range(finite_vertices_begin(),finite_vertices_end());
+  return { finite_vertices_begin(), finite_vertices_end() };
 }
 
 template <class Gt, class Tds >
@@ -3431,7 +3507,7 @@ typename Triangulation_2<Gt, Tds>::Line_face_circulator
 Triangulation_2<Gt, Tds>::
 line_walk(const Point& p, const Point& q, Face_handle f) const
 {
-  CGAL_triangulation_precondition( (dimension() == 2) && ! xy_equal(p,q));
+  CGAL_precondition( (dimension() == 2) && ! xy_equal(p,q));
   Line_face_circulator lfc = (f == Face_handle())
                              ? Line_face_circulator(p, q, this)
                              : Line_face_circulator(p, q, f, this);
@@ -3470,7 +3546,7 @@ bounded_side(const Point &p0, const Point &p1,
              const Point &p2, const Point &p) const
 {
   // return position of point p with respect to triangle p0p1p2
-  CGAL_triangulation_precondition( orientation(p0, p1, p2) != COLLINEAR);
+  CGAL_precondition( orientation(p0, p1, p2) != COLLINEAR);
   Orientation o1 = orientation(p0, p1, p),
               o2 = orientation(p1, p2, p),
               o3 = orientation(p2, p0, p);
@@ -3502,7 +3578,7 @@ Oriented_side
 Triangulation_2<Gt, Tds>::
 oriented_side(Face_handle f, const Point &p) const
 {
-  CGAL_triangulation_precondition ( dimension()==2);
+  CGAL_precondition ( dimension()==2);
   return oriented_side(f->vertex(0)->point(),
                        f->vertex(1)->point(),
                        f->vertex(2)->point(),
@@ -3515,7 +3591,7 @@ Triangulation_2<Gt, Tds>::
 side_of_oriented_circle(const Point &p0, const Point &p1, const Point &p2,
                         const Point &p, bool perturb) const
 {
-  //CGAL_triangulation_precondition( orientation(p0, p1, p2) == POSITIVE );
+  //CGAL_precondition( orientation(p0, p1, p2) == POSITIVE );
   // no reason for such precondition and it invalidates fast removal in Delaunay
 
   typename Gt::Side_of_oriented_circle_2 pred = geom_traits().side_of_oriented_circle_2_object();
@@ -3546,7 +3622,7 @@ side_of_oriented_circle(const Point &p0, const Point &p1, const Point &p2,
     if (points[i] == &p0 && (o = orientation(p,p1,p2)) != COLLINEAR )
       return Oriented_side(o);
   }
-  // CGAL_triangulation_assertion(false);
+  // CGAL_assertion(false);
   //no reason for such precondition and it invalidates fast removal in Delaunay
   return ON_NEGATIVE_SIDE;
 }
@@ -3610,13 +3686,8 @@ Comparison_result
 Triangulation_2<Gt, Tds>::
 compare_xy(const Point& p, const Point& q) const
 {
-  Comparison_result res = geom_traits().compare_x_2_object()(construct_point(p),
-                                                             construct_point(q));
-  if(res == EQUAL){
-    return geom_traits().compare_y_2_object()(construct_point(p),
-                                              construct_point(q));
-  }
-  return res;
+  return geom_traits().compare_xy_2_object()(construct_point(p),
+                                             construct_point(q));
 }
 
 template <class Gt, class Tds >
@@ -3666,7 +3737,7 @@ typename Triangulation_2<Gt, Tds>::Point_2
 Triangulation_2<Gt, Tds>::
 circumcenter(Face_handle f) const
 {
-  CGAL_triangulation_precondition (dimension()==2);
+  CGAL_precondition (dimension()==2);
   return circumcenter((f->vertex(0))->point(),
                       (f->vertex(1))->point(),
                       (f->vertex(2))->point());
@@ -3813,7 +3884,7 @@ std::istream&
 operator>>(std::istream& is, Triangulation_2<Gt, Tds> &tr)
 {
   tr.file_input(is);
-  CGAL_triangulation_assertion(tr.is_valid());
+  CGAL_assertion(tr.is_valid());
   return is;
 }
 
@@ -3835,11 +3906,11 @@ test_next(const Triangulation_2<GT, TDS1>& t1,
   // Returns false if an inequality has been found.
 
   // Precondition: f1, f2 have been registered as well as their 3 vertices.
-  CGAL_triangulation_precondition(t1.dimension() >= 2);
-  CGAL_triangulation_precondition(Fmap[f1] == f2);
-  CGAL_triangulation_precondition(Vmap.find(f1->vertex(0)) != Vmap.end());
-  CGAL_triangulation_precondition(Vmap.find(f1->vertex(1)) != Vmap.end());
-  CGAL_triangulation_precondition(t1.dimension() == 1 || Vmap.find(f1->vertex(2)) != Vmap.end());
+  CGAL_precondition(t1.dimension() >= 2);
+  CGAL_precondition(Fmap[f1] == f2);
+  CGAL_precondition(Vmap.find(f1->vertex(0)) != Vmap.end());
+  CGAL_precondition(Vmap.find(f1->vertex(1)) != Vmap.end());
+  CGAL_precondition(t1.dimension() == 1 || Vmap.find(f1->vertex(2)) != Vmap.end());
 
   typedef Triangulation_2<GT, TDS1>               Tr1;
   typedef Triangulation_2<GT, TDS2>               Tr2;

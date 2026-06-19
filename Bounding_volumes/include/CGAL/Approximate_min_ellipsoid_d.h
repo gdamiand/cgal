@@ -65,7 +65,7 @@ namespace CGAL {
     // When the input points do not affinely span the whole space
     // (i.e., if dim(aff(P)) < d), then the smallest enclosing
     // ellipsoid of P has no volume in R^d and so the points are
-    // called "degnerate" (see is_degenerate()) below.
+    // called "degenerate" (see is_degenerate()) below.
 
     // As discussed below (before (*)), the centrally symmetric ellipsoid
     // E':= sqrt{(1+a_eps)(d+1)} E contains (under exact arithmetic) the
@@ -140,7 +140,7 @@ namespace CGAL {
       CGAL_APPEL_ASSERT(is_deg == E->is_degenerate());
       CGAL_APPEL_LOG("appel",
                      "  Input points are " << (is_deg? "" : "not ") <<
-                     "degnerate." << std::endl);
+                     "degenerate." << std::endl);
 
       if (is_deg)
         find_lower_dimensional_approximation();
@@ -195,7 +195,7 @@ namespace CGAL {
     //      where alpha = (1+a_eps)(d+1) with a_eps the return value
     //      of achieved_epsilon().
     //
-    // The ellipsoid E* we actuallly want is the intersection of E' with
+    // The ellipsoid E* we actually want is the intersection of E' with
     // the hyperplane { (y,z) in R^{d+1} | y = 1}.  Writing
     //
     //       [ M'  m  ]                 [ y ]

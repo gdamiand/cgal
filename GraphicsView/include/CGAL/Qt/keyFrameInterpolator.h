@@ -12,6 +12,11 @@
 #ifndef QGLVIEWER_KEY_FRAME_INTERPOLATOR_H
 #define QGLVIEWER_KEY_FRAME_INTERPOLATOR_H
 
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 16
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wsfinae-incomplete"
+#endif
+
 #include <QObject>
 #include <QTimer>
 #include <CGAL/export/Qt.h>
@@ -290,7 +295,7 @@ private Q_SLOTS:
   }
 
 private:
-  // Copy constructor and opertor= are declared private and undefined
+  // Copy constructor and operator= are declared private and undefined
   // Prevents everyone from trying to use them
   // KeyFrameInterpolator(const KeyFrameInterpolator& kfi);
   // KeyFrameInterpolator& operator=(const KeyFrameInterpolator& kfi);
@@ -352,5 +357,9 @@ private:
 };
 
 }} // namespace CGAL::qglviewer
+
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 16
+#  pragma GCC diagnostic pop
+#endif
 
 #endif // QGLVIEWER_KEY_FRAME_INTERPOLATOR_H

@@ -32,10 +32,7 @@
 #endif
 
 #include <boost/dynamic_bitset.hpp>
-#include <boost/type_traits/remove_reference.hpp>
-#include <boost/type_traits/remove_cv.hpp>
 #include <boost/type_traits/is_function.hpp>
-#include <boost/mpl/if.hpp>
 
 #include <CGAL/config.h>
 #include <CGAL/assertions.h>
@@ -69,9 +66,9 @@ public:
   }
 
 private:
-  typedef typename boost::mpl::if_<boost::is_function<Function_>,
-                                   Function_*,
-                                   Function_>::type Stored_function;
+  typedef std::conditional_t<std::is_function_v<Function_>,
+                             Function_*,
+                             Function_> Stored_function;
   /// Function to wrap
   Stored_function f_;
 
@@ -84,65 +81,35 @@ make_implicit_to_labeling_function_wrapper(Function f)
   return Implicit_to_labeling_function_wrapper<Function, BGT>(f);
 }
 
-/**
- * \deprecated
- *
- * @class Implicit_vector_to_labeling_function_wrapper
- *
- * Wraps a set of implicit function [f1,f2,...] to one function F which
- * takes its values into N.
- *
- * Let p be a point.
- * F(p) = 0b000000(f2(p)<0)(f1(p)<0)
- *
- * It can handle at most 8 functions.
- */
-template<class Function_, class BGT>
-class Implicit_vector_to_labeling_function_wrapper
-{
-public:
-  // Types
-  typedef int                       return_type;
-  typedef std::vector<Function_*>   Function_vector;
-  typedef typename BGT::Point_3     Point_3;
 
-  /// Constructor
-  Implicit_vector_to_labeling_function_wrapper(const std::vector<Function_*>& v)
-    : function_vector_(v)
-  {
-    if ( v.size() > 8 )
-    {
-      CGAL_error_msg("We support at most 8 functions !");
-    }
-  }
 
-  // Default copy constructor and assignment operator are ok
 
-  /// Destructor
-  ~Implicit_vector_to_labeling_function_wrapper() {}
+  /*!
+\ingroup PkgMesh3Domains
 
-  /// Operator ()
-  return_type operator()(const Point_3& p) const
-  {
-    const int nb_func = static_cast<int>(function_vector_.size());
-    char bits = 0;
-    for ( int i = 0 ; i < nb_func ; ++i )
-    {
-      // Insert value into bits : we compute fi(p) and insert result at
-      // bit i of bits
-      bits = char(bits | ( ((*function_vector_[i])(p) < 0) << i ));
-    }
+The class `Implicit_multi_domain_to_labeling_function_wrapper` is a helper class to get a function with integer values
+labeling the components of a multidomain. The multidomain is described through a set of functions `{fi(p), i=1, ...n}`.
+Each component corresponds to a sign vector `[s1, s2, ..., sn]` where `si` is the sign of the function `fi(p)` at a point `p` of the component.
 
-    return ( static_cast<return_type>(bits) );
-  }
+This wrapper class can be passed to  the template constructor `Labeled_mesh_domain_3()` as first template parameter.
 
-private:
-  /// Functions to wrap
-  const Function_vector function_vector_;
+\par Example
+For example, the multidomain described by the three functions `[f1,f2,f3]` and the two sign vectors `[-,-,+]` and `[+,-,+]`
+ includes two components.<br />
+The first one matches the locus of points satisfying `f1(p)<0` and `f2(p)<0` and `f3(p)>0`.<br />
+The second one matches the locus of points satisfying `f1(p)>0` and `f2(p)<0` and `f3(p)>0`.<br />
 
-};  // end class Implicit_to_labeling_function_wrapper
+\tparam Function provides the definition of the function.
+This parameter stands for a model of the concept `ImplicitFunction` described in the surface mesh generation package.
+The number types `Function::FT` and `Labeled_mesh_domain_3::FT` are required to match.
 
+\sa `CGAL::Labeled_mesh_domain_3`.
+*/
+#ifdef DOXYGEN_RUNNING
+template <class Function>
+#else
 template <class ImplicitFunction>
+#endif
 class Implicit_multi_domain_to_labeling_function_wrapper
 {
   template <class T_>
@@ -156,15 +123,25 @@ class Implicit_multi_domain_to_labeling_function_wrapper
   class Implicit_function_traits<RT_ (*)(Point_)>
   {
   public:
-    typedef typename boost::remove_reference<
-            typename boost::remove_cv< Point_ >::type>::type Point;
+    typedef std::remove_reference_t<
+            std::remove_cv_t< Point_ >> Point;
   };
 
 public:
-  typedef int                     return_type;
-  typedef ImplicitFunction        Function;
-  typedef typename Implicit_function_traits<ImplicitFunction>::Point   Point_3;
-  typedef std::vector<Function>   Function_vector;
+  /// \name Types
+  /// @{
+
+#ifdef DOXYGEN_RUNNING
+  typedef typename Function::Point                             Point_3;
+#else
+  typedef ImplicitFunction                                     Function;
+  typedef typename Implicit_function_traits<Function>::Point   Point_3;
+  typedef int                                                  return_type;
+#endif
+
+  typedef std::vector<Function>                                Function_vector;
+
+  /// @}
 
 private:
   std::vector<Function> funcs;
@@ -172,13 +149,24 @@ private:
   std::vector<Bmask> bmasks;
 
 public:
-  Implicit_multi_domain_to_labeling_function_wrapper (const Function_vector& vf, const std::vector<std::vector<Sign> >& vps)
-  : funcs(vf), bmasks(vps.size(), Bmask(funcs.size() * 2, false))
+  /// \name Creation
+  /// @{
+
+  /*!
+   * \brief Construction from a vector of implicit functions and a vector of vector of signs.
+   *
+   * \param implicit_functions the vector of implicit functions.
+   * \param position_vectors the vector of vector of signs. Each vector of positions describes a component.
+   *
+   * \sa `Sign`
+   */
+  Implicit_multi_domain_to_labeling_function_wrapper (const Function_vector& implicit_functions, const std::vector<std::vector<Sign> >& position_vectors)
+  : funcs(implicit_functions), bmasks(position_vectors.size(), Bmask(funcs.size() * 2, false))
   {
     CGAL_assertion(funcs.size() != 0);
 
     std::size_t mask_index = 0;
-    for (std::vector<std::vector<Sign> >::const_iterator mask_iter = vps.begin(), mask_end_iter = vps.end();
+    for (std::vector<std::vector<Sign> >::const_iterator mask_iter = position_vectors.begin(), mask_end_iter = position_vectors.end();
          mask_iter != mask_end_iter;
          ++mask_iter)
     {
@@ -200,9 +188,15 @@ public:
     }
     std::sort(bmasks.begin(), bmasks.end());
   }
+  /*!
+   * \brief Construction from a vector of implicit functions.
 
-  Implicit_multi_domain_to_labeling_function_wrapper (const Function_vector& vf)
-  : funcs(vf)
+   * \param implicit_functions the vector of implicit functions.
+   *
+   * Position vectors are built automatically so that the union of components equals the union of the functions.
+   */
+  Implicit_multi_domain_to_labeling_function_wrapper (const Function_vector& implicit_functions)
+  : funcs(implicit_functions)
   {
     CGAL_assertion(funcs.size() != 0);
 
@@ -227,13 +221,19 @@ public:
     std::sort(bmasks.begin(), bmasks.end());
   }
 
-  Implicit_multi_domain_to_labeling_function_wrapper (const Function_vector& vf, const std::vector<std::string>& vps)
-  : funcs(vf), bmasks(vps.size(), Bmask(funcs.size() * 2, false))
+  /*!
+   * \brief Construction from a vector of implicit functions and a vector of strings.
+   *
+   * \param implicit_functions the vector of implicit functions.
+   * \param position_strings the vector of strings. The strings contained in this vector must contain '+' or '-' only. Each string (vector of positions) describes a component.
+   */
+  Implicit_multi_domain_to_labeling_function_wrapper (const Function_vector& implicit_functions, const std::vector<std::string>& position_strings)
+  : funcs(implicit_functions), bmasks(position_strings.size(), Bmask(funcs.size() * 2, false))
   {
     CGAL_assertion(funcs.size() != 0);
 
     std::size_t mask_index = 0;
-    for (std::vector<std::string>::const_iterator mask_iter = vps.begin(), mask_end_iter = vps.end();
+    for (std::vector<std::string>::const_iterator mask_iter = position_strings.begin(), mask_end_iter = position_strings.end();
          mask_iter != mask_end_iter;
          ++mask_iter)
     {
@@ -255,6 +255,8 @@ public:
     }
     std::sort(bmasks.begin(), bmasks.end());
   }
+
+  /// @}
 
   return_type operator() (const Point_3& p) const
   {
@@ -281,9 +283,7 @@ public:
   }
 };
 
-}  // end namespace CGAL
-
-
+} // end namespace CGAL
 
 #if defined(BOOST_MSVC)
 #  pragma warning(pop)

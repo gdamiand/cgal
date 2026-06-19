@@ -20,7 +20,7 @@
 #include <CGAL/Point_set_processing_3/internal/Voronoi_covariance_3/voronoi_covariance_3.h>
 
 #include <CGAL/property_map.h>
-#include <CGAL/point_set_processing_assertions.h>
+#include <CGAL/assertions.h>
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Kd_tree.h>
 #include <CGAL/Search_traits_3.h>
@@ -265,9 +265,6 @@ compute_vcm (const PointRange& points,
              double convolution_radius,
              const NamedParameters& np = parameters::default_values())
 {
-    using parameters::choose_parameter;
-    using parameters::get_parameter;
-
     // basic geometric types
     typedef Point_set_processing_3_np_helper<PointRange, NamedParameters> NP_helper;
     typedef typename NP_helper::Const_point_map PointMap;
@@ -311,9 +308,6 @@ vcm_estimate_normals_internal (PointRange& points,
                                int nb_neighbors_convolve = -1 ///< number of neighbors used during the convolution.
 )
 {
-    using parameters::choose_parameter;
-    using parameters::get_parameter;
-
     // basic geometric types
     typedef Point_set_processing_3_np_helper<PointRange, NamedParameters> NP_helper;
     typedef typename NP_helper::Point_map PointMap;
@@ -321,7 +315,7 @@ vcm_estimate_normals_internal (PointRange& points,
     typedef typename NP_helper::Geom_traits Kernel;
     typedef typename GetDiagonalizeTraits<NamedParameters, double, 3>::type DiagonalizeTraits;
 
-    CGAL_static_assertion_msg(NP_helper::has_normal_map(), "Error: no normal map");
+    CGAL_assertion_msg(NP_helper::has_normal_map(points, np), "Error: no normal map");
 
     PointMap point_map = NP_helper::get_point_map(points, np);
     NormalMap normal_map = NP_helper::get_normal_map(points, np);

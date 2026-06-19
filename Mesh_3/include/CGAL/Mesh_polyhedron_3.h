@@ -22,10 +22,16 @@
 
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/Polyhedron_items_3.h>
+#include <CGAL/HalfedgeDS_face_base.h>
+#include <CGAL/HalfedgeDS_halfedge_base.h>
+#include <CGAL/HalfedgeDS_vertex_base.h>
 #include <CGAL/Has_timestamp.h>
 #include <CGAL/tags.h>
+#include <CGAL/Time_stamper.h>
 
+#include <cstddef>
 #include <set>
+#include <utility>
 
 namespace CGAL {
 namespace Mesh_3 {
@@ -41,10 +47,9 @@ private:
   typedef CGAL::HalfedgeDS_vertex_base<Refs, Tag, Point> Pdv_base;
 
   Set_of_indices indices;
-  std::size_t time_stamp_;
-
+  std::size_t time_stamp_ = Time_stamper<void>::invalid_time_stamp;
 public:
-  int nb_of_feature_edges;
+  int nb_of_feature_edges = 0;
 
   bool is_corner() const {
     return nb_of_feature_edges > 2;
@@ -85,8 +90,8 @@ public:
     return indices;
   }
 
-  Mesh_polyhedron_vertex() : Pdv_base(), time_stamp_(-1), nb_of_feature_edges(0) {}
-  Mesh_polyhedron_vertex(const Point& p) : Pdv_base(p), time_stamp_(-1), nb_of_feature_edges(0) {}
+  Mesh_polyhedron_vertex() = default;
+  Mesh_polyhedron_vertex(const Point& p) : Pdv_base(p) {}
 };
 
 template <class Refs, class Tprev, class Tvertex, class Tface>
@@ -95,7 +100,7 @@ public CGAL::HalfedgeDS_halfedge_base<Refs,Tprev,Tvertex,Tface>
 {
 private:
   bool feature_edge;
-  std::size_t time_stamp_;
+  std::size_t time_stamp_ = Time_stamper<void>::invalid_time_stamp;
 
 public:
 
@@ -143,7 +148,7 @@ public CGAL::HalfedgeDS_face_base<Refs,T_,Pln_>
 {
 private:
   Patch_id_ patch_id_;
-  std::size_t time_stamp_;
+  std::size_t time_stamp_ = Time_stamper<void>::invalid_time_stamp;
 
 public:
 
@@ -209,13 +214,45 @@ public:
 
 } // end namespace Mesh_3
 
+/*!
+\ingroup PkgMesh3Domains
 
-template <typename Gt, typename Patch_id=int>
+The class `Mesh_polyhedron_3` provides a customized `Polyhedron_3` type. This type uses
+as `PolyhedronItems_3` a customized type which adds data to the `Vertex`, `Face` and
+`Halfedge` classes. Those data are required to use the detection of sharp features.
+
+\tparam IGT stands for the geometric traits associated
+to the meshing process. It must be a model of the two concepts
+`PolyhedronTraits_3` and `IntersectionGeometricTraits_3`.
+
+\sa `CGAL::Polyhedron_3<GT>`
+\sa `CGAL::Polyhedral_mesh_domain_with_features_3<IGT>`
+
+*/
+#ifdef DOXYGEN_RUNNING
+template <typename IGT>
 struct Mesh_polyhedron_3
 {
-  typedef Polyhedron_3<Gt, Mesh_3::Mesh_polyhedron_items<Patch_id> > type;
+  /// \name Types
+  /// @{
+
+  /*!
+    `CGAL::Polyhedron_3<IGT>` type with customized `PolyhedronItems_3` designed to handle sharp feature detection.
+  */
+  typedef unspecified_type type;
+
+  /// @}
+};
+#else
+template <typename IGT,
+          typename Patch_id = int>
+struct Mesh_polyhedron_3
+{
+  typedef Polyhedron_3<IGT, Mesh_3::Mesh_polyhedron_items<Patch_id> > type;
   typedef type Type;
 };
+#endif
+
 } // end namespace CGAL
 
 #endif // CGAL_MESH_POLYHEDRON_3_H

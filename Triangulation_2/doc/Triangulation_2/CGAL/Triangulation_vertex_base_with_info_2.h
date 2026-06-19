@@ -19,13 +19,15 @@ the triangulation.
 
 \tparam Vb must be a vertex base class from which
 `Triangulation_vertex_base_with_info_3` derives. By default
-this parameter is instantiated by
+this parameter is instantiated with
 `Triangulation_vertex_base_2<Traits>`.
 
-\cgalModels `TriangulationVertexBaseWithInfo_2`
-\cgalModels The parameter `Vb` is a model of some vertex base concept.
+\cgalModelsBareBegin
+\cgalModelsBare{`TriangulationVertexBaseWithInfo_2`}
+\cgalModelsBare{The parameter `Vb` is a model of some vertex base concept.
 `Triangulation_vertex_base_with_info_2` derives from `Vb` and will be a model of the
-same vertex base concept: `TriangulationVertexBase_2`, or `RegularTriangulationVertexBase_2`.
+same vertex base concept: `TriangulationVertexBase_2`, or `RegularTriangulationVertexBase_2`.}
+\cgalModelsBareEnd
 
 \sa `CGAL::Triangulation_face_base_with_info_2<Info,Traits,Fb>`
 \sa `CGAL::Triangulation_vertex_base_2<Traits,Vb>`
@@ -50,13 +52,13 @@ typedef Info Info;
 /// @{
 
 /*!
-Returns a const reference to the object of type `Info` stored in the
+returns a const reference to the object of type `Info` stored in the
 vertex.
 */
 const Info& info() const;
 
 /*!
-Returns a reference to the object of type `Info` stored in the vertex.
+returns a reference to the object of type `Info` stored in the vertex.
 */
 Info& info();
 

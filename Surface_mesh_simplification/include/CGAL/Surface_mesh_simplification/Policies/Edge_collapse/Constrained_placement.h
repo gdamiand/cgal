@@ -24,14 +24,21 @@ class Constrained_placement
   : public BasePlacement
 {
 public:
-  Constrained_placement(const EdgeIsConstrainedMap map = EdgeIsConstrainedMap(),
-                        const BasePlacement& base = BasePlacement())
+  template <typename BP = BasePlacement,
+            typename std::enable_if_t<std::is_default_constructible_v<BP>, int> = 0>
+  Constrained_placement(const EdgeIsConstrainedMap map = EdgeIsConstrainedMap())
+    : BasePlacement(),
+      m_ecm(map)
+  {}
+
+  Constrained_placement(const EdgeIsConstrainedMap map,
+                        const BasePlacement& base)
     : BasePlacement(base),
       m_ecm(map)
   {}
 
   template <typename Profile>
-  boost::optional<typename Profile::Point> operator()(const Profile& profile) const
+  std::optional<typename Profile::Point> operator()(const Profile& profile) const
   {
     typedef typename Profile::TM                                    TM;
     typedef typename boost::graph_traits<TM>::halfedge_descriptor   halfedge_descriptor;

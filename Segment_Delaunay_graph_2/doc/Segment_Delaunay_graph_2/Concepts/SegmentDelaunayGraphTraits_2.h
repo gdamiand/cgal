@@ -4,7 +4,7 @@
 
 \cgalConcept
 
-\cgalRefines `TriangulationTraits_2`
+\cgalRefines{TriangulationTraits_2}
 
 The concept `SegmentDelaunayGraphTraits_2` provides the traits
 requirements for the `CGAL::Segment_Delaunay_graph_2<Gt,St,DS>` and
@@ -14,10 +14,12 @@ the concept `SegmentDelaunayGraphSite_2`. It also provides
 constructions for sites and several function object
 types for the predicates.
 
-\cgalHasModel `CGAL::Segment_Delaunay_graph_traits_2<K,MTag>`
-\cgalHasModel `CGAL::Segment_Delaunay_graph_traits_without_intersections_2<K,MTag>`
-\cgalHasModel `CGAL::Segment_Delaunay_graph_filtered_traits_2<CK,CM,EK,EM,FK,FM>`
-\cgalHasModel `CGAL::Segment_Delaunay_graph_filtered_traits_without_intersections_2<CK,CM,EK,EM,FK,FM>`
+\cgalHasModelsBegin
+\cgalHasModels{CGAL::Segment_Delaunay_graph_traits_2<K,MTag>}
+\cgalHasModels{CGAL::Segment_Delaunay_graph_traits_without_intersections_2<K,MTag>}
+\cgalHasModels{CGAL::Segment_Delaunay_graph_filtered_traits_2<CK,CM,EK,EM,FK,FM>}
+\cgalHasModels{CGAL::Segment_Delaunay_graph_filtered_traits_without_intersections_2<CK,CM,EK,EM,FK,FM>}
+\cgalHasModelsEnd
 
 \sa `SegmentDelaunayGraphSite_2`
 \sa `CGAL::Segment_Delaunay_graph_2<Gt,St,DS>`
@@ -190,9 +192,9 @@ A predicate object type.
 Must provide `Oriented_side operator()(Site_2 s1, Site_2 s2, Point_2 p)`, which returns
 the oriented side of the bisector of `s1` and `s2` that
 contains `p`. Returns `ON_POSITIVE_SIDE` if `p` lies in
-the half-space of `s1` (i.e., `p` is closer to `s1` than
+the halfspace of `s1` (i.e., `p` is closer to `s1` than
 `s2`); returns `ON_NEGATIVE_SIDE` if `p` lies in the
-half-space of `s2`; returns `ON_ORIENTED_BOUNDARY` if `p`
+halfspace of `s2`; returns `ON_ORIENTED_BOUNDARY` if `p`
 lies on the bisector of `s1` and `s2`.
 */
 typedef unspecified_type Oriented_side_of_bisector_2;
@@ -204,7 +206,7 @@ returns the sign of the distance of `q` from the Voronoi circle
 of `s1`, `s2`, `s3` (the Voronoi circle of three sites
 `s1`, `s2`, `s3` is a circle co-tangent to all three
 sites, that touches them in that order as we walk on its circumference
-in the counter-clockwise sense).
+in the counterclockwise sense).
 \pre the Voronoi circle of `s1`, `s2`, `s3` must exist.
 
 Must also provide `Sign operator()(Site_2 s1, Site_2 s2, Site_2 q)`, which returns the sign of the distance of
@@ -374,7 +376,7 @@ Arrangement_type_2 arrangement_type_2_object();
 
 /// @}
 
-/// \name Access to contructor objects
+/// \name Access to constructor objects
 /// @{
 
 /*!

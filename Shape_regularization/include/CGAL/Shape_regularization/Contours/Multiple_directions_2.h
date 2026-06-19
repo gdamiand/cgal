@@ -48,7 +48,7 @@ namespace Contours {
     range and value type is `GeomTraits::Point_2`. The default is
     `CGAL::Identity_property_map<typename GeomTraits::Point_2>`.
 
-    \cgalModels `ContourDirections`
+    \cgalModels{ContourDirections}
   */
   template<
   typename GeomTraits,
@@ -126,8 +126,8 @@ namespace Contours {
       const bool is_closed,
       const NamedParameters& np = parameters::default_values()) :
     m_input_range(input_range),
-    m_point_map(parameters::choose_parameter(parameters::get_parameter(
-      np, internal_np::point_map), PointMap())) {
+    m_point_map(parameters::choose_parameter<PointMap>(parameters::get_parameter(
+      np, internal_np::point_map))) {
 
       CGAL_precondition(input_range.size() >= 2);
       m_max_angle_2 = parameters::choose_parameter(

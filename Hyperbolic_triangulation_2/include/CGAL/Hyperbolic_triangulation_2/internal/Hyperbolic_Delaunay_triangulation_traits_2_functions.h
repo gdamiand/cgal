@@ -46,7 +46,7 @@ public:
 
     // TODO MT improve
 
-    // The cirle belongs to the pencil with limit points p and q
+    // The circle belongs to the pencil with limit points p and q
     // p, q are zero-circles
     // (x, y, xˆ2 + yˆ2 - rˆ2) = alpha*(xp, yp, xpˆ2 + ypˆ2) + (1-alpha)*(xq, yq, xqˆ2 + yqˆ2)
     // xˆ2 + yˆ2 - rˆ2 = 1 (= radius of the Poincare disc)
@@ -225,13 +225,11 @@ class Side_of_oriented_hyperbolic_segment_2
   typedef typename Traits::Construct_weighted_circumcenter_2  Construct_weighted_circumcenter_2;
 
 public:
-  typedef Oriented_side                                       result_type;
-
   Side_of_oriented_hyperbolic_segment_2(const Traits& gt = Traits()) : _gt(gt) {}
 
-  result_type operator()(const Hyperbolic_point_2& p,
-                         const Hyperbolic_point_2& q,
-                         const Hyperbolic_point_2& query) const
+  Oriented_side operator()(const Hyperbolic_point_2& p,
+                           const Hyperbolic_point_2& q,
+                           const Hyperbolic_point_2& query) const
   {
     // Check first if the points are collinear with the origin
     Circle_2 poincare(Hyperbolic_point_2(FT(0),FT(0)), FT(1));

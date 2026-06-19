@@ -13,24 +13,28 @@
 #ifndef CGAL_POLYHEDRON_3_TO_LCC_H
 #define CGAL_POLYHEDRON_3_TO_LCC_H
 
+#include <CGAL/license/Polyhedron.h>
+
+
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/assertions.h>
 #include <iostream>
 #include <map>
 #include <CGAL/Polyhedron_3.h>
+#include <CGAL/config.h>
 
 namespace CGAL {
 
   /** Import a given Polyhedron_3 into a Linear_cell_complex.
    * @param alcc the linear cell complex where Polyhedron_3 will be converted.
    * @param apoly the Polyhedron.
-   * @return A dart created during the convertion.
+   * @return A dart created during the conversion.
    */
   template< class LCC, class Polyhedron >
-  typename LCC::Dart_descriptor import_from_polyhedron_3(LCC& alcc,
+  typename LCC::Dart_descriptor polyhedron_3_to_lcc(LCC& alcc,
                                                      const Polyhedron &apoly)
   {
-    CGAL_static_assertion( LCC::dimension>=2 && LCC::ambient_dimension==3 );
+    static_assert( LCC::dimension>=2 && LCC::ambient_dimension==3 );
 
     typedef typename Polyhedron::Halfedge_const_handle  Halfedge_handle;
     typedef typename Polyhedron::Facet_const_iterator   Facet_iterator;
@@ -91,14 +95,29 @@ namespace CGAL {
     return firstAll;
   }
 
+#ifndef CGAL_NO_DEPRECATED_CODE
+
+/*!
+  \deprecated This function is deprecated since CGAL 6.2. Use `polyhedron_3_to_lcc()` instead.
+*/
+template< class LCC, class Polyhedron >
+CGAL_DEPRECATED
+typename LCC::Dart_descriptor
+import_from_polyhedron_3(LCC& alcc, const Polyhedron &apoly)
+{
+  return polyhedron_3_to_lcc<LCC, Polyhedron>(alcc, apoly);
+}
+
+#endif // CGAL_NO_DEPRECATED_CODE
+
   /** Convert a Polyhedron_3 read into a flux into 3D linear cell complex.
    * @param alcc the linear cell complex where Polyhedron_3 will be converted.
    * @param ais the istream where read the Polyhedron_3.
-   * @return A dart created during the convertion.
+   * @return A dart created during the conversion.
    */
   template < class LCC >
   typename LCC::Dart_descriptor
-  import_from_polyhedron_3_flux(LCC& alcc, std::istream& ais)
+  polyhedron_3_flux_to_lcc(LCC& alcc, std::istream& ais)
   {
     if (!ais.good())
     {
@@ -107,7 +126,7 @@ namespace CGAL {
     }
     CGAL::Polyhedron_3<typename LCC::Traits> P;
     ais >> P;
-    return import_from_polyhedron_3<LCC, CGAL::Polyhedron_3
+    return polyhedron_3_to_lcc<LCC, CGAL::Polyhedron_3
                                     <typename LCC::Traits> > (alcc, P);
   }
 

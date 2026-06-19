@@ -383,6 +383,40 @@ compare_slope(const typename K::Point_2 &s1s,
   return k.compare_slope_2_object()(s1s, s1t, s2s, s2t);
 }
 
+
+template < class K >
+inline
+typename K::Comparison_result
+compare_squared_radius(const typename K::Point_2 &p,
+                       const typename K::FT &sr,
+                       const K& k)
+{
+  return k.compare_squared_radius_2_object()(p, sr);
+}
+
+template < class K >
+inline
+typename K::Comparison_result
+compare_squared_radius(const typename K::Point_2 &p,
+                       const typename K::Point_2 &q,
+                       const typename K::FT &sr,
+                       const K& k)
+{
+  return k.compare_squared_radius_2_object()(p, q, sr);
+}
+
+template < class K >
+inline
+typename K::Comparison_result
+compare_squared_radius(const typename K::Point_2 &p,
+                       const typename K::Point_2 &q,
+                       const typename K::Point_2 &r,
+                       const typename K::FT &sr,
+                       const K& k)
+{
+  return k.compare_squared_radius_2_object()(p, q, r, sr);
+}
+
 template < class K >
 inline
 typename K::Comparison_result
@@ -986,6 +1020,23 @@ side_of_oriented_circle(const typename K::Point_2 &p,
                         const typename K::Point_2 &t, const K &k)
 {
   return k.side_of_oriented_circle_2_object()(p, q, r, t);
+}
+
+
+template <typename K>
+inline
+typename K::FT
+squared_length(const typename K::Vector_2 &v, const K &k)
+{
+  return k.compute_squared_length_2_object()(v);
+}
+
+template <typename K>
+inline
+typename K::FT
+squared_length(const typename K::Segment_2 &s, const K &k)
+{
+  return k.compute_squared_length_2_object()(s);
 }
 
 template < class K >

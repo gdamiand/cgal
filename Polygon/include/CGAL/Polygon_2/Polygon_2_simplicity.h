@@ -20,7 +20,7 @@
 #include <CGAL/disable_warnings.h>
 
 #include <CGAL/enum.h>
-#include <CGAL/Polygon_2/polygon_assertions.h>
+#include <CGAL/assertions.h>
 #include <set>
 #include <vector>
 #include <algorithm>
@@ -220,9 +220,9 @@ template <class VertexData>
 bool Less_segments<VertexData>::
 less_than_in_tree(Vertex_index new_edge, Vertex_index tree_edge) const
 {
-    CGAL_polygon_precondition(
+    CGAL_precondition(
        m_vertex_data->edges[tree_edge.as_int()].is_in_tree);
-    CGAL_polygon_precondition(
+    CGAL_precondition(
        !m_vertex_data->edges[new_edge.as_int()].is_in_tree);
     Vertex_index left, mid, right;
     m_vertex_data->left_and_right_index(left, right, tree_edge);
@@ -323,20 +323,20 @@ insertion_event(Tree *tree, Vertex_index prev_vt,
     std::pair<typename Tree::iterator, bool> result;
     if (left_turn) {
         result = tree->insert(prev_vt);
-        // CGAL_polygon_assertion(result.second)
+        // CGAL_assertion(result.second)
         td_prev.tree_it = result.first;
         td_prev.is_in_tree = true;
         result = tree->insert(mid_vt);
-        // CGAL_polygon_assertion(result.second)
+        // CGAL_assertion(result.second)
         td_mid.tree_it = result.first;
         td_mid.is_in_tree = true;
     } else {
         result = tree->insert(mid_vt);
-        // CGAL_polygon_assertion(result.second)
+        // CGAL_assertion(result.second)
         td_mid.tree_it = result.first;
         td_mid.is_in_tree = true;
         result = tree->insert(prev_vt);
-        // CGAL_polygon_assertion(result.second)
+        // CGAL_assertion(result.second)
         td_prev.tree_it = result.first;
         td_prev.is_in_tree = true;
     }
@@ -369,7 +369,7 @@ replacement_event(Tree *tree, Vertex_index cur_edge, Vertex_index next_edge)
     // check if continuation point is on the right side of neighbor segments
     typedef typename Tree::iterator It;
     Edge_data<Less_segs> &td = edges[cur_edge.as_int()];
-    CGAL_polygon_assertion(td.is_in_tree);
+    CGAL_assertion(td.is_in_tree);
     It cur_seg = td.tree_it;
     Vertex_index cur_vt = (td.is_left_to_right) ? next_edge : cur_edge;
     if (cur_seg != tree->begin()) {
@@ -479,6 +479,8 @@ bool is_simple_polygon(Iterator points_begin, Iterator points_end,
     typedef std::set<i_polygon::Vertex_index,
                      i_polygon::Less_segments<Vertex_data> >       Tree;
 
+    typename PolygonTraits::Equal_2 equal_2 = polygon_traits.equal_2_object();
+
     // A temporary fix as the sweep in some cases doesn't discover vertices with degree > 2
     // Todo: fix the sweep code
     std::vector<typename PolygonTraits::Point_2> points(points_begin,points_end);
@@ -487,7 +489,7 @@ bool is_simple_polygon(Iterator points_begin, Iterator points_end,
     typename std::vector<typename PolygonTraits::Point_2>::iterator
                                   succ(points.begin()) , it(succ++);
     for(;succ != points.end(); ++it,++succ){
-      if(*it == *succ){
+      if(equal_2(*it, *succ)){
         return false;
       }
     }

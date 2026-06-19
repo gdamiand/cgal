@@ -39,7 +39,7 @@ have essentially the same semantics as in the `Segment_Delaunay_graph_2<Gt,St,DS
 `SegmentDelaunayGraphTraits_2` concept.
 
 \tparam St must be a model of `SegmentDelaunayGraphStorageTraits_2`.
-        By default, the storage traits is instantiated by `Segment_Delaunay_graph_storage_traits_2<Gt>`.
+        By default, the storage traits is instantiated with `Segment_Delaunay_graph_storage_traits_2<Gt>`.
 
 \tparam STag The third template
 parameter controls whether or not segments are added in the upper
@@ -68,9 +68,7 @@ The `Segment_Delaunay_graph_hierarchy_2` class derives publicly from the
 the same with its base class. In the sequel only additional types
 and methods defined are documented.
 
-\cgalModels `DefaultConstructible`
-\cgalModels `CopyConstructible`
-\cgalModels `Assignable`
+\cgalModels{DefaultConstructible,CopyConstructible,Assignable}
 
 \sa `CGAL::Segment_Delaunay_graph_2<Gt,St,DS>`
 \sa `CGAL::Triangulation_data_structure_2<Vb,Fb>`

@@ -45,7 +45,6 @@ public:
   typedef typename Base::Construct_opposite_2      Base_Construct_opposite_2;
   typedef typename Base::Has_left_category         Has_left_category;
   typedef typename Base::Has_merge_category        Has_merge_category;
-  typedef typename Base::Has_do_intersect_category Has_do_intersect_category;
 
   typedef typename Base::Left_side_category        Left_side_category;
   typedef typename Base::Bottom_side_category      Bottom_side_category;
@@ -53,14 +52,14 @@ public:
   typedef typename Base::Right_side_category       Right_side_category;
 
   // a side is either oblivious or open (unbounded)
-  CGAL_static_assertion((std::is_same< Left_side_category, Arr_oblivious_side_tag >::value ||
-                         std::is_same< Left_side_category, Arr_open_side_tag >::value));
-  CGAL_static_assertion((std::is_same< Bottom_side_category, Arr_oblivious_side_tag >::value ||
-                         std::is_same< Bottom_side_category, Arr_open_side_tag >::value));
-  CGAL_static_assertion((std::is_same< Top_side_category, Arr_oblivious_side_tag >::value ||
-                         std::is_same< Top_side_category, Arr_open_side_tag >::value));
-  CGAL_static_assertion((std::is_same< Right_side_category, Arr_oblivious_side_tag >::value ||
-                         std::is_same< Right_side_category, Arr_open_side_tag >::value));
+  static_assert(std::is_same< Left_side_category, Arr_oblivious_side_tag >::value ||
+                         std::is_same< Left_side_category, Arr_open_side_tag >::value);
+  static_assert(std::is_same< Bottom_side_category, Arr_oblivious_side_tag >::value ||
+                         std::is_same< Bottom_side_category, Arr_open_side_tag >::value);
+  static_assert(std::is_same< Top_side_category, Arr_oblivious_side_tag >::value ||
+                         std::is_same< Top_side_category, Arr_open_side_tag >::value);
+  static_assert(std::is_same< Right_side_category, Arr_oblivious_side_tag >::value ||
+                         std::is_same< Right_side_category, Arr_open_side_tag >::value);
 
   class Ex_point_2
   {
@@ -387,7 +386,7 @@ public:
     }
   };
 
-  /*! Get a Equal_2 functor object. */
+  /*! Get an `Equal_2` functor object. */
   Equal_2 equal_2_object() const
   {
     return Equal_2(m_base_traits->equal_2_object());

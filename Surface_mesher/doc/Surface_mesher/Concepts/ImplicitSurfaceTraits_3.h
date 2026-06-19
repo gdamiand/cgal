@@ -15,7 +15,9 @@ the concept `ImplicitSurfaceTraits_3` provides the types, predicates and constru
 that are passed
 to the generated model of `SurfaceMeshTraits_3`.
 
-\cgalHasModel Any \cgal Kernel.
+\cgalHasModelsBegin
+\cgalHasModelsBare{All models of the \cgal concept `Kernel`}
+\cgalHasModelsEnd
 
 \sa `CGAL::Implicit_surface_3<Traits, Function>`
 \sa `CGAL::make_surface_mesh()`
@@ -163,7 +165,7 @@ typedef unspecified_type Construct_vector_3;
 A function object providing the operator
 
 `bool operator()(const Sphere_3&s, const Point_3&p)` which
-returns true iff `p` lies on the bounded side of `s`.
+returns `true` iff `p` lies on the bounded side of `s`.
 */
 typedef unspecified_type Has_on_bounded_side_3;
 

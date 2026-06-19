@@ -11,8 +11,8 @@
 // Author(s)     : Stéphane Tayeb, Pierre Alliez
 //
 
-#ifndef AABB_TRIANGULATION_3_TRIANGLE_PRIMITIVE_H_
-#define AABB_TRIANGULATION_3_TRIANGLE_PRIMITIVE_H_
+#ifndef CGAL_AABB_TRIANGULATION_3_TRIANGLE_PRIMITIVE_H_
+#define CGAL_AABB_TRIANGULATION_3_TRIANGLE_PRIMITIVE_H_
 
 #include <CGAL/license/AABB_tree.h>
 
@@ -28,7 +28,7 @@ namespace CGAL {
     // the TriangleMesh from which the AABB tree is built should not be
     // deleted while the AABB tree is in use.
     //
-    // \cgalModels `AABBPrimitive`
+    // \cgalModels{AABBPrimitive}
     // \tparam GeomTraits must provides a \c %Point_3
     // type, used as \c Point, and a \c %Triangle_3 type, used as \c
     // Datum and constructible from three arguments of type \c
@@ -112,4 +112,4 @@ namespace CGAL {
 
 #include <CGAL/enable_warnings.h>
 
-#endif // AABB_TRIANGULATION_3_TRIANGLE_PRIMITIVE_H_
+#endif // CGAL_AABB_TRIANGULATION_3_TRIANGLE_PRIMITIVE_H_

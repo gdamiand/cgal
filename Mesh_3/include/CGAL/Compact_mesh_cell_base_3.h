@@ -21,13 +21,21 @@
 #include <CGAL/array.h>
 #include <CGAL/assertions.h>
 #include <CGAL/basic.h>
-#include <CGAL/triangulation_assertions.h>
-#include <CGAL/TDS_3/internal/Dummy_tds_3.h>
-#include <CGAL/tags.h>
 #include <CGAL/Has_timestamp.h>
-
+#include <CGAL/IO/io.h>
+#include <CGAL/Kernel_traits.h>
 #include <CGAL/Regular_triangulation_cell_base_3.h>
 #include <CGAL/SMDS_3/io_signature.h>
+#include <CGAL/tags.h>
+#include <CGAL/TDS_3/internal/Dummy_tds_3.h>
+#include <CGAL/Time_stamper.h>
+
+#include <array>
+#include <cstddef>
+#include <istream>
+#include <ostream>
+#include <string>
+#include <type_traits>
 
 #ifdef CGAL_LINKED_WITH_TBB
 # include <atomic>
@@ -123,21 +131,21 @@ public:
   }
 #endif
 
-  /// Marks \c facet as visited
+  /// Marks `facet` as visited
   void set_facet_visited (const int facet)
   {
     CGAL_precondition(facet>=0 && facet <4);
     bits_ |= char(1 << facet);
   }
 
-  /// Marks \c facet as not visited
+  /// Marks `facet` as not visited
   void reset_visited (const int facet)
   {
     CGAL_precondition(facet>=0 && facet<4);
     bits_ = char(bits_ & (15 & ~(1 << facet)));
   }
 
-  /// Returns \c true if \c facet is marked as visited
+  /// Returns `true` if `facet` is marked as visited
   bool is_facet_visited (const int facet) const
   {
     CGAL_precondition(facet>=0 && facet<4);
@@ -194,7 +202,7 @@ public:
     ++this->m_erase_counter;
   }
 
-  /// Marks \c facet as visited
+  /// Marks `facet` as visited
   void set_facet_visited (const int facet)
   {
     CGAL_precondition(facet>=0 && facet<4);
@@ -206,7 +214,7 @@ public:
     }
   }
 
-  /// Marks \c facet as not visited
+  /// Marks `facet` as not visited
   void reset_visited (const int facet)
   {
     CGAL_precondition(facet>=0 && facet<4);
@@ -219,7 +227,7 @@ public:
     }
   }
 
-  /// Returns \c true if \c facet is marked as visited
+  /// Returns `true` if `facet` is marked as visited
   bool is_facet_visited (const int facet) const
   {
     CGAL_precondition(facet>=0 && facet<4);
@@ -351,7 +359,7 @@ public:
 
   Vertex_handle vertex(int i) const
   {
-    CGAL_triangulation_precondition( i >= 0 && i <= 3 );
+    CGAL_precondition( i >= 0 && i <= 3 );
     return V[i];
   }
 
@@ -374,13 +382,13 @@ public:
     if (v == V[0]) { return 0; }
     if (v == V[1]) { return 1; }
     if (v == V[2]) { return 2; }
-    CGAL_triangulation_assertion( v == V[3] );
+    CGAL_assertion( v == V[3] );
     return 3;
   }
 
   Cell_handle neighbor(int i) const
   {
-    CGAL_triangulation_precondition( i >= 0 && i <= 3);
+    CGAL_precondition( i >= 0 && i <= 3);
     return N[i];
   }
 
@@ -403,7 +411,7 @@ public:
     if (n == N[0]) return 0;
     if (n == N[1]) return 1;
     if (n == N[2]) return 2;
-    CGAL_triangulation_assertion( n == N[3] );
+    CGAL_assertion( n == N[3] );
     return 3;
   }
 
@@ -412,8 +420,8 @@ public:
 
   void set_neighbor(int i, Cell_handle n)
   {
-    CGAL_triangulation_precondition( i >= 0 && i <= 3);
-    CGAL_triangulation_precondition( this != n.operator->() );
+    CGAL_precondition( i >= 0 && i <= 3);
+    CGAL_precondition( this != n.operator->() );
     N[i] = n;
   }
 
@@ -426,10 +434,10 @@ public:
   void set_neighbors(Cell_handle n0, Cell_handle n1,
                      Cell_handle n2, Cell_handle n3)
   {
-    CGAL_triangulation_precondition( this != n0.operator->() );
-    CGAL_triangulation_precondition( this != n1.operator->() );
-    CGAL_triangulation_precondition( this != n2.operator->() );
-    CGAL_triangulation_precondition( this != n3.operator->() );
+    CGAL_precondition( this != n0.operator->() );
+    CGAL_precondition( this != n1.operator->() );
+    CGAL_precondition( this != n2.operator->() );
+    CGAL_precondition( this != n3.operator->() );
     N[0] = n0;
     N[1] = n1;
     N[2] = n2;
@@ -438,7 +446,7 @@ public:
 
   // CHECKING
 
-  // the following trivial is_valid allows
+  // the following trivial is_valid enables
   // the user of derived cell base classes
   // to add their own purpose checking
   bool is_valid(bool = false, int = 0) const
@@ -462,7 +470,7 @@ public:
   // but there's not much we can do for this now.
   void set_vertex(int i, Vertex_handle v)
   {
-    CGAL_triangulation_precondition( i >= 0 && i <= 3);
+    CGAL_precondition( i >= 0 && i <= 3);
     invalidate_weighted_circumcenter_cache();
     V[i] = v;
   }
@@ -486,8 +494,8 @@ public:
   template<typename GT_>
   const Point_3& weighted_circumcenter(const GT_& gt) const
   {
-    CGAL_static_assertion((std::is_same<Point_3,
-      typename GT_::Construct_weighted_circumcenter_3::result_type>::value));
+    static_assert(std::is_same<Point_3,
+      typename GT_::Construct_weighted_circumcenter_3::result_type>::value);
     if (internal_tbb::is_null(weighted_circumcenter_)) {
       this->try_to_set_circumcenter(
         new Point_3(gt.construct_weighted_circumcenter_3_object()
@@ -527,42 +535,42 @@ public:
   bool is_cache_valid() const { return sliver_cache_validity_; }
   void reset_cache_validity() const { sliver_cache_validity_ = false;  }
 
-  /// Set surface index of \c facet to \c index
+  /// Set surface index of `facet` to `index`
   void set_surface_patch_index(const int facet, const Surface_patch_index& index)
   {
     CGAL_precondition(facet>=0 && facet<4);
     surface_index_table_[facet] = index;
   }
 
-  /// Returns surface index of facet \c facet
+  /// Returns surface index of facet `facet`
   Surface_patch_index surface_patch_index(const int facet) const
   {
     CGAL_precondition(facet>=0 && facet<4);
     return surface_index_table_[facet];
   }
 
-  /// Sets surface center of \c facet to \c point
+  /// Sets surface center of `facet` to `point`
   void set_facet_surface_center(const int facet, const Point_3& point)
   {
     CGAL_precondition(facet>=0 && facet<4);
     surface_center_table_[facet] = point;
   }
 
-  /// Returns surface center of \c facet
+  /// Returns surface center of `facet`
   Point_3 get_facet_surface_center(const int facet) const
   {
     CGAL_precondition(facet>=0 && facet<4);
     return surface_center_table_[facet];
   }
 
-  /// Sets surface center index of \c facet to \c index
+  /// Sets surface center index of `facet` to `index`
   void set_facet_surface_center_index(const int facet, const Index& index)
   {
     CGAL_precondition(facet>=0 && facet<4);
     surface_center_index_table_[facet] = index;
   }
 
-  /// Returns surface center of \c facet
+  /// Returns surface center of `facet`
   Index get_facet_surface_center_index(const int facet) const
   {
     CGAL_precondition(facet>=0 && facet<4);
@@ -585,7 +593,7 @@ public:
   void set_surface_index(const int facet, const Surface_index& index)
   { set_surface_patch_index(facet,index); }
 
-  /// Returns surface index of facet \c facet
+  /// Returns surface index of facet `facet`
   Surface_index surface_index(const int facet) const
   { return surface_patch_index(facet); }
 #endif // CGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX
@@ -645,7 +653,7 @@ private:
 #ifdef CGAL_INTRUSIVE_LIST
   Cell_handle next_intrusive_ = {}, previous_intrusive_ = {};
 #endif
-  std::size_t time_stamp_;
+  std::size_t time_stamp_ = Time_stamper<void>::invalid_time_stamp;
 
   std::array<Index, 4> surface_center_index_table_ = {};
   /// Stores visited facets (4 first bits)
@@ -725,7 +733,7 @@ belong. That parameter is only used by the rebind mechanism (see
 `::TriangulationDSCellBase_3::Rebind_TDS`). Users should always use the
 default parameter value `void`.
 
-\cgalModels `MeshCellBase_3`
+\cgalModels{MeshCellBase_3}
 
 \sa `CGAL::Mesh_complex_3_in_triangulation_3<Tr,CornerIndex,CurveIndex>`
 \sa `CGAL::Mesh_cell_base_3<GT, MD, Cb>`
@@ -741,7 +749,11 @@ template <typename GT, typename MD>
 class Compact_mesh_cell_base_3<GT, MD, void>
 {
 public:
+#ifdef DOXYGEN_RUNNING
+  typedef unspecified_type                              Triangulation_data_structure;
+#else
   typedef internal::Dummy_tds_3                         Triangulation_data_structure;
+#endif
   typedef Triangulation_data_structure::Vertex_handle   Vertex_handle;
   typedef Triangulation_data_structure::Cell_handle     Cell_handle;
   template <typename TDS2>
@@ -762,7 +774,11 @@ template <typename GT,
 class Compact_mesh_cell_generator_3
 {
 public:
+#ifdef DOXYGEN_RUNNING
+  typedef unspecified_type                              Triangulation_data_structure;
+#else
   typedef internal::Dummy_tds_3                         Triangulation_data_structure;
+#endif
   typedef Triangulation_data_structure::Vertex_handle   Vertex_handle;
   typedef Triangulation_data_structure::Cell_handle     Cell_handle;
   template <typename TDS2>

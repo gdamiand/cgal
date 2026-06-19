@@ -30,10 +30,16 @@
 #include <QVector>
 #include <QElapsedTimer>
 #include <QTimer>
-#include <QGLContext>
 #include <QOpenGLWidget>
 #include <QMouseEvent>
+#include <QKeyCombination>
 
+#ifndef APIENTRY
+#define APIENTRY QT_APIENTRY
+#endif
+#ifndef APIENTRYP
+#define APIENTRYP APIENTRY *
+#endif
 
 class QTabWidget;
 class QImage;
@@ -71,9 +77,6 @@ class CGAL_QT_EXPORT QGLViewer : public QOpenGLWidget, public QOpenGLFunctions {
   Q_OBJECT
 
 public:
-  //todo check if this is used. If not remove it
-  explicit QGLViewer(QGLContext* context, QWidget *parent = nullptr,
-                     ::Qt::WindowFlags flags = ::Qt::WindowType(0));
   explicit QGLViewer(QOpenGLContext* context, QWidget *parent = nullptr,
                      ::Qt::WindowFlags flags = ::Qt::WindowType(0));
   explicit QGLViewer(QWidget *parent = nullptr,
@@ -385,7 +388,7 @@ public:
    * of the world and the origin of the scene. It is relevant when the whole scene is translated
    * of a big number, because there is a useless loss of precision when drawing.
    *
-   * The offset must be added to the drawn coordinates, and substracted from the computation
+   * The offset must be added to the drawn coordinates, and subtracted from the computation
    * \attention  the result of pointUnderPixel is the real item translated by the offset.
    *
    */
@@ -482,7 +485,6 @@ public:
   qreal bufferTextureMaxU() const { return bufferTextureMaxU_; }
   /*! Same as bufferTextureMaxU(), but for the v texture coordinate. */
   qreal bufferTextureMaxV() const { return bufferTextureMaxV_; }
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 4, 0))
   // These methods are part of the QGLWidget public API.
   // As of version 2.7.0, the use of QOpenGLWidget instead means that they have
   // to be provided for backward compatibility.
@@ -490,7 +492,6 @@ public:
                   const QFont &font = QFont());
   void renderText(double x, double y, double z, const QString &str,
                   const QFont &font = QFont());
-#endif
 
 public Q_SLOTS:
   void copyBufferToTexture(GLint, GLenum = GL_NONE);
@@ -841,33 +842,27 @@ compatible with raster mode): use \c glRasterPos3fv() instead. */
   /*! @name Keyboard customization */
   //@{
 public:
-  unsigned int shortcut(qglviewer::KeyboardAction action) const;
+  QKeyCombination shortcut(qglviewer::KeyboardAction action) const;
 
   ::Qt::Key pathKey(unsigned int index) const;
   ::Qt::KeyboardModifiers addKeyFrameKeyboardModifiers() const;
   ::Qt::KeyboardModifiers playPathKeyboardModifiers() const;
 
 public Q_SLOTS:
-  void setShortcut(qglviewer::KeyboardAction action, unsigned int key);
+  void setShortcut(qglviewer::KeyboardAction action, QKeyCombination key);
   void setShortcut(qglviewer::KeyboardAction action, ::Qt::Modifier modifier, ::Qt::Key key)
   {
-    setShortcut(action,
-                static_cast<unsigned int>(modifier)+
-                static_cast<unsigned int>(key));
+    setShortcut(action, QKeyCombination{modifier, key});
   }
 
-  void setKeyDescription(unsigned int key, QString description);
+  void setKeyDescription(QKeyCombination key, QString description);
   void setKeyDescription(::Qt::KeyboardModifier modifier, ::Qt::Key key, QString description)
   {
-    setKeyDescription(static_cast<unsigned int>(modifier) +
-                      static_cast<unsigned int>(key),
-                      description);
+    setKeyDescription(QKeyCombination{modifier, key}, description);
   }
   void setKeyDescription(::Qt::Modifier modifier, ::Qt::Key key, QString description)
   {
-    setKeyDescription(static_cast<unsigned int>(modifier) +
-                      static_cast<unsigned int>(key),
-                      description);
+    setKeyDescription(QKeyCombination{modifier, key}, description);
   }
   void clearShortcuts();
 
@@ -1077,8 +1072,8 @@ protected:
   void setDefaultShortcuts();
   QString cameraPathKeysString() const;
   QMap<qglviewer::KeyboardAction, QString> keyboardActionDescription_;
-  QMap<qglviewer::KeyboardAction, unsigned int> keyboardBinding_;
-  QMap<unsigned int, QString> keyDescription_;
+  QMap<qglviewer::KeyboardAction, QKeyCombination> keyboardBinding_;
+  QHash<QKeyCombination, QString> keyDescription_;
 
   // K e y   F r a m e s   s h o r t c u t s
   QMap< ::Qt::Key, unsigned int> pathIndex_;
@@ -1158,7 +1153,7 @@ protected:
         return modifiers < cbp.modifiers;
       if (button != cbp.button)
         return button < cbp.button;
-      return doubleClick != cbp.doubleClick;
+      return doubleClick < cbp.doubleClick;
     }
   };
 #endif
@@ -1216,6 +1211,7 @@ protected:
   qglviewer::Vec _offset;
   //C o n t e x t
   bool is_ogl_4_3;
+  bool is_ogl_3_2;
   bool is_sharing;
   bool is_linked;
   QOpenGLContext* shared_context;
@@ -1227,6 +1223,13 @@ public:
   //! @returns `true` if the context is 4.3.
   //! @returns `false` if the context is ES 2.0.
   bool isOpenGL_4_3()const {return is_ogl_4_3; }
+
+  //! Is used to know if the openGL context supports GLSL 1.50 (OpenGL 3.2).
+  //! This is the requirement for the modern (`#version 150`) shaders, which is
+  //! weaker than isOpenGL_4_3(). Use this to select modern vs compatibility
+  //! shaders, and isOpenGL_4_3() for the OpenGL 4.3 C++ API.
+  //! @returns `true` if the context is at least OpenGL 3.2.
+  bool isOpenGL_3_2()const {return is_ogl_3_2; }
 
 };
 

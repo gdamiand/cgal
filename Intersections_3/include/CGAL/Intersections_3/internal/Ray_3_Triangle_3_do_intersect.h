@@ -64,7 +64,7 @@ struct r3t3_do_intersect_endpoint_position_visitor
   void end_point_in_triangle(){ m_intersection_type = 4; }
 };
 
-//the template parameter Visitor here is used to offer the posibility to use
+//the template parameter Visitor here is used to offer the possibility to use
 //r3t3_do_intersect_endpoint_position_visitor to track whether the endpoint of
 //the ray lies inside the plane of the triangle or not. It is used for example
 //in the function that checks whether a point is inside a polyhedron; if the ray
@@ -147,9 +147,6 @@ do_intersect_coplanar(const typename K::Triangle_3& t,
   case NEGATIVE:
     switch ( pqb ) {
     case POSITIVE:
-      if (pqc == POSITIVE)         // a is isolated on the negative side
-        return visitor.result(coplanar_orientation(*b,*a,p) != POSITIVE);
-      // b is isolated on the positive side
       return visitor.result(coplanar_orientation(*b,*a,p) != POSITIVE);
 
     case NEGATIVE:
@@ -160,11 +157,7 @@ do_intersect_coplanar(const typename K::Triangle_3& t,
       // c is isolated on the positive side
       return visitor.result(coplanar_orientation(*c,*b,p) != POSITIVE);
     case COLLINEAR:
-      if (pqc == NEGATIVE) // b is isolated on the positive side
-        return visitor.result(coplanar_orientation(*b,*a,p) != POSITIVE);
-      // a is isolated on the negative side
       return visitor.result(coplanar_orientation(*b,*a,p) != POSITIVE);
-
     default: // should not happen.
       CGAL_kernel_assertion(false);
       return visitor.result(false);
@@ -173,16 +166,12 @@ do_intersect_coplanar(const typename K::Triangle_3& t,
   case COLLINEAR:
     switch ( pqb ) {
     case POSITIVE:
-      if (pqc == POSITIVE) // a is isolated on the negative side
-        return visitor.result(coplanar_orientation(*b,*a,p) != POSITIVE);
-      // b is isolated on the positive side
       return visitor.result(coplanar_orientation(*b,*a,p) != POSITIVE);
     case NEGATIVE:
       if (pqc == NEGATIVE) // a is isolated on the positive side
         return visitor.result(coplanar_orientation(*a,*c,p) != POSITIVE);
       // b is isolated on the negative side
       return visitor.result(coplanar_orientation(*c,*b,p) != POSITIVE);
-
     case COLLINEAR:
       if (pqc == POSITIVE) // c is isolated on the positive side
         return visitor.result(coplanar_orientation(*c,*b,p) != POSITIVE);
@@ -328,18 +317,20 @@ do_intersect(const typename K::Triangle_3& t,
 }
 
 template <class K>
-bool do_intersect(const typename K::Triangle_3& t,
-                 const typename K::Ray_3& r,
-                 const K& k)
+typename K::Boolean
+do_intersect(const typename K::Triangle_3& t,
+             const typename K::Ray_3& r,
+             const K& k)
 {
   return do_intersect(t, r, k, r3t3_do_intersect_empty_visitor());
 }
 
 template <class K>
 inline
-bool do_intersect(const typename K::Ray_3& r,
-                  const typename K::Triangle_3& t,
-                  const K& k)
+typename K::Boolean
+do_intersect(const typename K::Ray_3& r,
+             const typename K::Triangle_3& t,
+             const K& k)
 {
   return do_intersect(t, r, k);
 }

@@ -17,6 +17,7 @@
 
 #include <CGAL/basic.h>
 #include <CGAL/Unique_hash_map.h>
+#include <CGAL/use.h>
 #include <CGAL/Nef_2/Constrained_triang_traits.h>
 #include <CGAL/Nef_2/Object_handle.h>
 #include <CGAL/Circulator_project.h>
@@ -27,7 +28,7 @@
 #ifdef CGAL_I_DO_WANT_TO_USE_GENINFO
 #include <CGAL/Nef_2/geninfo.h>
 #else
-#include <boost/any.hpp>
+#include <any>
 #endif
 
 #ifdef CGAL_USE_LEDA_LIBRARY
@@ -158,13 +159,12 @@ public:
     const Direction& d, bool& collinear) const
   /*{\Xop returns a halfedge |e| bounding a wedge in between two
   neighbored edges in the adjacency list of |v| which contains |d|.
-  If |d| extends along a edge then |e| is this edge. If |d| extends
+  If |d| extends along an edge then |e| is this edge. If |d| extends
   into the interior of such a wedge then |e| is the first edge hit
   when |d| is rotated clockwise. \precond |v| is not isolated.}*/
   { CGAL_NEF_TRACEN("out_wedge "<<PV(v));
     CGAL_assertion(!is_isolated(v));
     collinear=false;
-    Point p = point(v);
     Halfedge_const_handle e_res = first_out_edge(v);
     Direction d_res = direction(e_res);
     Halfedge_around_vertex_const_circulator el(e_res),ee(el);
@@ -218,7 +218,7 @@ public:
   { CGAL_NEF_TRACEN("locate naivly "<<s);
     if (this->number_of_vertices() == 0)
       CGAL_error_msg("PM_naive_point_locator: plane map is empty.");
-    Point p = K.source(s);
+    const Point& p = K.source(s);
     Vertex_const_iterator vit;
     for(vit = this->vertices_begin(); vit != this->vertices_end(); ++vit) {
       if ( p == point(vit) ) return make_object(vit);
@@ -235,7 +235,7 @@ public:
     Direction dso = K.construct_direction(K.target(s),p), d_res;
     CGAL::Unique_hash_map<Halfedge_const_handle,bool> visited(false);
     for(vit = this->vertices_begin(); vit != this->vertices_end(); ++vit) {
-      Point p_res, vp = point(vit);
+      const Point& vp = point(vit);
       if ( K.contains(ss,vp) ) {
         CGAL_NEF_TRACEN(" location via vertex at "<<vp);
         ss = K.construct_segment(p,vp); // we shrink the segment
@@ -259,8 +259,8 @@ public:
 
     for (eit = this->halfedges_begin(); eit != this->halfedges_end(); ++eit) {
       if ( visited[eit] ) continue;
-      Point se = point(source(eit)),
-            te = point(target(eit));
+      const Point& se = point(source(eit));
+      const Point& te = point(target(eit));
       int o1 = K.orientation(ss,se);
       int o2 = K.orientation(ss,te);
       if ( o1 == -o2 && // internal intersection
@@ -297,7 +297,7 @@ public:
   along |s| does not hit any object |h| of |P| with |M(h)|.}*/
   { CGAL_NEF_TRACEN("naive ray_shoot "<<s);
     CGAL_assertion( !K.is_degenerate(s) );
-    Point p = K.source(s);
+    const Point& p = K.source(s);
     Segment ss(s);
     Direction d = K.construct_direction(K.source(s),K.target(s));
     Object_handle h = locate(s);
@@ -310,7 +310,7 @@ public:
     h = Object_handle();
     CGAL_NEF_TRACEN("not contained");
     for (v = this->vertices_begin(); v != this->vertices_end(); ++v) {
-      Point pv = point(v);
+      const Point& pv = point(v);
       if ( !K.contains(ss,pv) ) continue;
       CGAL_NEF_TRACEN("candidate "<<pv);
       if ( M(v) ) {
@@ -362,16 +362,16 @@ public:
 
 
   // C++ is really friendly:
-  #define USECMARK(t) const Mark& mark(t h) const { return Base::mark(h); }
-  #define USEMARK(t)  Mark& mark(t h) const { return Base::mark(h); }
-  USEMARK(Vertex_handle)
-  USEMARK(Halfedge_handle)
-  USEMARK(Face_handle)
-  USECMARK(Vertex_const_handle)
-  USECMARK(Halfedge_const_handle)
-  USECMARK(Face_const_handle)
-  #undef USEMARK
-  #undef USECMARK
+  #define CGAL_USECMARK(t) const Mark& mark(t h) const { return Base::mark(h); }
+  #define CGAL_USEMARK(t)  Mark& mark(t h) const { return Base::mark(h); }
+  CGAL_USEMARK(Vertex_handle)
+  CGAL_USEMARK(Halfedge_handle)
+  CGAL_USEMARK(Face_handle)
+  CGAL_USECMARK(Vertex_const_handle)
+  CGAL_USECMARK(Halfedge_const_handle)
+  CGAL_USECMARK(Face_const_handle)
+  #undef CGAL_USEMARK
+  #undef CGAL_USECMARK
   /*{\Mimplementation Naive query operations are realized by checking
   the intersection points of the $1$-skeleton of the plane map |P| with
   the query segments $s$. This method takes time linear in the size $n$
@@ -407,9 +407,9 @@ protected:
   typedef PM_persistent_PL_traits<Base>  PMPPLT;
   typedef PointLocator<PMPPLT>           PMPP_locator;
   PMPP_locator* pPPL;
-  #define LOCATE_IN_TRIANGULATION pPPL->locate_down
+  #define CGAL_LOCATE_IN_TRIANGULATION pPPL->locate_down
   #else
-  #define LOCATE_IN_TRIANGULATION walk_in_triangulation
+  #define CGAL_LOCATE_IN_TRIANGULATION walk_in_triangulation
   #endif
 
 public:
@@ -496,7 +496,7 @@ protected:
     return geninfo<VF_pair>::const_access(CT.info(v)).first;
     #else
     return
-      boost::any_cast<VF_pair>(CT.info(v)).first;
+      std::any_cast<VF_pair>(CT.info(v)).first;
     #endif
   }
 
@@ -506,7 +506,7 @@ protected:
     return geninfo<EF_pair>::const_access(CT.info(e)).first;
     #else
     return
-      boost::any_cast<EF_pair>(CT.info(e)).first;
+      std::any_cast<EF_pair>(CT.info(e)).first;
     #endif
   }
 
@@ -516,7 +516,7 @@ protected:
     return geninfo<EF_pair>::const_access(CT.info(e)).second;
     #else
     return
-      boost::any_cast<EF_pair>(CT.info(e)).second;
+      std::any_cast<EF_pair>(CT.info(e)).second;
     #endif
   }
 
@@ -536,7 +536,7 @@ protected:
   The efficiency of this point location module is mostly based on
   heuristics. Therefore worst case bounds are not very expressive. The
   query operations take up to linear time for subsequent query
-  operations though they are better in practise. They trigger a one-time
+  operations though they are better in practice. They trigger a one-time
   initialization which needs worst case $O(n^2)$ time though runtime
   tests often show subquadratic results. The necessary space for the
   query structure is subsumed in the storage space $O(n)$ of the input
@@ -583,10 +583,10 @@ protected:
         f = geninfo<EF_pair>::access(info(e_from)).second;
         #else
         f =
-          boost::any_cast<VF_pair>(info(source(e))).second;
+          std::any_cast<VF_pair>(info(source(e))).second;
       else
         f =
-          boost::any_cast<EF_pair>(info(e_from)).second;
+          std::any_cast<EF_pair>(info(e_from)).second;
         #endif
       mark(e) = _DP.mark(f);
       #ifdef CGAL_I_DO_WANT_TO_USE_GENINFO
@@ -642,10 +642,10 @@ protected:
       Halfedge_handle e3 = next(e);
       // e1,e3: edges of quadrilateral with diagonal e
 
-      Point a = point(source(e1));
-      Point b = point(target(e1));
-      Point c = point(source(e3));
-      Point d = point(target(e3));
+      const Point& a = point(source(e1));
+      const Point& b = point(target(e1));
+      const Point& c = point(source(e3));
+      const Point& d = point(target(e3));
 
       if (! (this->K.orientation(b,d,a) > 0 && // left_turn
              this->K.orientation(b,d,c) < 0) ) // right_turn
@@ -665,6 +665,7 @@ protected:
 
 
     }
+    CGAL_USE(flip_count);
     CGAL_NEF_TRACEN("  flipped "<<flip_count);
   }
 
@@ -697,7 +698,7 @@ public:
   face) of |P| which contains the point |p| in its relative
   interior.}*/
   {
-    Object_handle h = LOCATE_IN_TRIANGULATION(p);
+    Object_handle h = CGAL_LOCATE_IN_TRIANGULATION(p);
     Vertex_const_handle v_triang;
     if ( assign(v_triang,h) ) {
       return input_object(v_triang);
@@ -729,7 +730,7 @@ public:
                                   Halfedge_const_handle& e,
                                   const Tag_false& ) const {
     CGAL_NEF_TRACEN("target on outer facet");
-    Point p = this->K.source(s);
+    const Point& p = this->K.source(s);
     Vertex_const_handle v1 = CT.vertices_begin();
     Halfedge_const_handle e1 = CT.twin(CT.first_out_edge(v1));
     Halfedge_around_face_const_circulator circ(e1), end(circ);
@@ -780,12 +781,12 @@ public:
   { Segment s(ss);
     CGAL_NEF_TRACEN("ray_shoot "<<s);
     CGAL_assertion( !this->K.is_degenerate(s) );
-    Point p = this->K.source(s);
+    const Point& p = this->K.source(s);
     Direction d = this->K.construct_direction(p,s.target());
     Vertex_const_handle v;
     Halfedge_const_handle e;
     object_kind current;
-    Object_handle h = LOCATE_IN_TRIANGULATION(p);
+    Object_handle h = CGAL_LOCATE_IN_TRIANGULATION(p);
     if ( assign(v,h) ) {
       CGAL_NEF_TRACEN("located vertex "<<PV(v));
       current = VERTEX;
@@ -811,9 +812,9 @@ public:
         if ( M(input_face(e)) ) // face mark
           return make_object(input_face(e));
 
-        Point p1 = CT.point(CT.source(e)),
-              p2 = CT.point(CT.target(e)),
-              p3 = CT.point(CT.target(next(e)));
+        const Point& p1 = CT.point(CT.source(e));
+        const Point& p2 = CT.point(CT.target(e));
+        const Point& p3 = CT.point(CT.target(next(e)));
         int or1 = this->K.orientation(p,s.target(),p1);
         int or2 = this->K.orientation(p,s.target(),p2);
         int or3 = this->K.orientation(p,s.target(),p3);
@@ -966,7 +967,7 @@ PM_point_locator<PMD,GEO>::
     #ifdef CGAL_I_DO_WANT_TO_USE_GENINFO
     geninfo<VF_pair>::clear(CT.info(vit));
     #else
-    CT.info(vit)=boost::any();
+    CT.info(vit)=std::any();
     #endif
   }
   Halfedge_iterator eit, eend = CT.halfedges_end();
@@ -974,7 +975,7 @@ PM_point_locator<PMD,GEO>::
     #ifdef CGAL_I_DO_WANT_TO_USE_GENINFO
     geninfo<EF_pair>::clear(CT.info(eit));
     #else
-    CT.info(eit)=boost::any();
+    CT.info(eit)=std::any();
     #endif
   }
   CT.clear();
@@ -997,7 +998,7 @@ PM_point_locator<PMD,GEO>::walk_in_triangulation(const Point& q) const
       return Object_handle();
 
   Halfedge_const_handle e;
-  Point p = CT.point(v);
+  const Point& p = CT.point(v);
   if ( p == q ) return make_object(v);
   //  Segment s = this->K.construct_segment(p,q);
   Direction dir = this->K.construct_direction(p,q);

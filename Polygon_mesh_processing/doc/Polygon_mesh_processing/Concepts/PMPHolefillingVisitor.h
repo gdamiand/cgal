@@ -8,8 +8,10 @@
 /// may use an algorithm with a quadratic running time relying on the 3D Delaunay triangulation (*quadratic phase*).
 /// If that fails, it uses an algorithm with cubic running time (*cubic phase*).
 ///
-/// \cgalRefines `CopyConstructible`
-/// \cgalHasModel `CGAL::Polygon_mesh_processing::Hole_filling::Default_visitor`.
+/// \cgalRefines{CopyConstructible}
+/// \cgalHasModelsBegin
+/// \cgalHasModels{CGAL::Polygon_mesh_processing::Hole_filling::Default_visitor}
+/// \cgalHasModelsEnd
 
 class PMPHolefillingVisitor{
 public:
@@ -59,5 +61,14 @@ public:
   /// called after having faired the triangulation of the hole
   ///(`triangulate_refine_and_fair_hole()` only)
   void end_fair_phase();
+
+  /// called before considering a triangle made from the points with indices i0, i1, and i2 to triangulate a hole.
+  /// The indices refers to the position of the points in the input point range if triangulating a polyline, or to
+  /// the position of the vertices along the cycle of halfedges of the input border halfedge if triangulating a hole
+  /// in a polygon mesh (`0` being the target of the input border halfedge, `1` the target of the next border halfedge, ...).
+  /// If `false` is returned, the triangle will not be used. If `true` is returned, the triangle will be
+  /// added to the candidate triangles.
+  bool accept_triangle(int i0, int i1, int i2);
+
 
 };

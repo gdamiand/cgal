@@ -13,9 +13,13 @@
 
 #include <CGAL/license/Surface_mesh_simplification.h>
 
+#define CGAL_DEPRECATED_HEADER "<CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Bounded_normal_change_placement.h>"
+#define CGAL_REPLACEMENT_HEADER "<CGAL/Surface_mesh_simplification/Policies/Edge_collapse/Bounded_normal_change_filter.h>"
+#include <CGAL/Installation/internal/deprecation_warning.h>
+
 #include <CGAL/property_map.h>
 
-#include <boost/optional.hpp>
+#include <optional>
 
 namespace CGAL {
 namespace Surface_mesh_simplification {
@@ -24,12 +28,18 @@ template<class GetPlacement>
 class Bounded_normal_change_placement
 {
 public:
-  Bounded_normal_change_placement(const GetPlacement& get_placement = GetPlacement())
+  template <typename GP = GetPlacement,
+            std::enable_if_t<std::is_default_constructible_v<GP>, int> = 0>
+  Bounded_normal_change_placement()
+    : m_get_placement()
+  {}
+
+  Bounded_normal_change_placement(const GetPlacement& get_placement)
     : m_get_placement(get_placement)
   {}
 
   template <typename Profile>
-  boost::optional<typename Profile::Point>
+  std::optional<typename Profile::Point>
   operator()(const Profile& profile) const
   {
     typedef typename Profile::VertexPointMap                              Vertex_point_map;
@@ -43,11 +53,11 @@ public:
     const Geom_traits& gt = profile.geom_traits();
     const Vertex_point_map& vpm = profile.vertex_point_map();
 
-    boost::optional<typename Profile::Point> op = m_get_placement(profile);
+    std::optional<typename Profile::Point> op = m_get_placement(profile);
     if(op)
     {
       // triangles returns the triangles of the star of the vertices of the edge to collapse
-      // First the two trianges incident to the edge, then the other triangles
+      // First the two triangles incident to the edge, then the other triangles
       // The second vertex of each triangle is the vertex that gets placed
        const typename Profile::Triangle_vector& triangles = profile.triangles();
        if(triangles.size() > 2)
@@ -76,7 +86,7 @@ public:
            Vector n2 = gt.construct_cross_product_vector_3_object()(eq2p, eq2r);
 
            if(!is_positive(gt.compute_scalar_product_3_object()(n1, n2)))
-             return boost::optional<typename Profile::Point>();
+             return std::optional<typename Profile::Point>();
 
            ++it;
          }

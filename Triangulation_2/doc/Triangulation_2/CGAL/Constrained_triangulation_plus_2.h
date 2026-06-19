@@ -22,11 +22,17 @@ point.
 
 
 The data structure maintains for each input constraint
-the sequence of vertices on this constraint. These vertices are
+the sequence of vertices on this constraint. Note that there is
+not a one-to-one correspondence between an input constraint and
+the sequence of vertices. These vertices are
 either vertices of the input constraint or intersection points.
+Also consecutive identical points in the input constraint
+result in a single vertex in the sequence of vertices on this
+constraint. In case of an input constraint being degenerate
+to a point, this point is inserted but there will not be a
+zero length constraint.
 
-\todo The following description does not match the code
-Two consecutive vertices of an input constraint form a *subconstraint*.
+Two consecutive vertices of a constraint form a *subconstraint*.
 A subconstraint is a pair of vertex handles and corresponds to a constrained edge of the
 triangulation, which is a pair of a face handle and an index.
 
@@ -36,7 +42,8 @@ It further enables the retrieval of the set of input constraints that induce a s
 As it is straightforward to obtain a subconstraint from a constrained edge `e`,
 one can obtain the input constraints which induce `e`.
 
-\tparam Tr must be either a CGAL::Constrained_triangulation_2 or a CGAL::Constrained_Delaunay_triangulation_2
+
+\tparam Tr must be either a `CGAL::Constrained_triangulation_2` or a `CGAL::Constrained_Delaunay_triangulation_2`
 
 \sa `CGAL::Constrained_triangulation_2<Traits,Tds>`
 \sa `CGAL::Constrained_Delaunay_triangulation_2<Traits,Tds>`
@@ -59,7 +66,7 @@ typedef Tr Triangulation;
 /*!
 The intersection tag as defined in `Tr`.
 */
-  typedef Tr::Intersection_tag Intersection_tag;
+typedef Tr::Intersection_tag Intersection_tag;
 
 /*!
 The identifier of a polyline constraint.
@@ -70,17 +77,17 @@ A default constructed `Constraint_id` is a singular value that can not be the ID
   typedef unspecified_type Constraint_id;
 
 /*!
-An iterator to visit
+A bidirectional iterator to visit
 all the input constraints. The order of visit is undefined.
 The value type of this iterator is `Constraint_id`.
 */
 typedef unspecified_type Constraint_iterator;
 
 /*!
-A range type for iterating over all constraints.
+A range type for iterating over all constraints. The iterator type of
+the range is `Constraint_iterator`.
 */
-typedef Iterator_range<Constraint_iterator> Constraints;
-
+typedef unspecified_type Constraints;
 
 /*!
 A subconstraint is a pair of vertices that correspond to an `Edge`.
@@ -88,22 +95,33 @@ A subconstraint is a pair of vertices that correspond to an `Edge`.
 typedef std::pair<Vertex_handle, Vertex_handle> Subconstraint;
 
 /*!
-An iterator
-to visit all the subconstraints of the triangulation.
+A bidirectional iterator to visit all the subconstraints of the triangulation.
 The order of visit is undefined.
-The value type of this iterator is `std::pair<Subconstraint,std::list<Context>*>`
-corresponding to the vertices of the
-subconstraint.
+The value type of this iterator is `Subconstraint`.
 */
 typedef unspecified_type Subconstraint_iterator;
 
 /*!
-A range type for iterating over all subconstraints.
+A range type for iterating over all subconstraints. The iterator type of
+the range is `Subconstraint_iterator`.
 */
-typedef Iterator_range<Subconstraint_iterator> Subconstraints;
+typedef unspecified_type Subconstraints;
 
 /*!
-An iterator on the
+A bidirectional iterator to visit all the subconstraints of the triangulation and the
+contexts of their enclosing constraints. The order of visit is undefined.
+The value type of this iterator is `const std::pair<const Subconstraint, std::list<Context>*>`.
+*/
+typedef unspecified_type Subconstraint_and_contexts_iterator;
+
+/*!
+A range type for iterating over all subconstraints. The iterator type of
+the range is `Subconstraint_and_contexts_iterator`.
+*/
+typedef unspecified_type Subconstraints_and_contexts;
+
+/*!
+A bidirectional iterator on the
 vertices of the chain of subconstraints representing a
 constraint. The value type of this iterator is `Vertex_handle`.
 */
@@ -131,12 +149,12 @@ through a subconstraint.
      */
     Vertices_in_constraint_iterator vertices_begin() const;
 
-  /*!
+    /*!
       returns the past-the-end of the vertices of the enclosing constraint.
      */
     Vertices_in_constraint_iterator vertices_end() const;
 
-  /*!
+    /*!
     returns the iterator `vici`  of the enclosing constraint
     for which `*vici` and `*%std::next(vici)`
     correspond to the two vertices of the subconstraint.
@@ -145,15 +163,13 @@ through a subconstraint.
   };
 
 /*!
-An iterator on
-constraints enclosing a given subconstraint. The value type of this
-iterator
-is `Context`.
+A bidirectional iterator on constraints enclosing a given subconstraint.
+The value type of this iterator is `Context`.
 */
 typedef unspecified_type Context_iterator;
 
 /*!
-range type for iterating over contexts.
+Range type for iterating over contexts.
 */
 typedef Iterator_range<Context_iterator> Contexts;
 /// @}
@@ -162,7 +178,7 @@ typedef Iterator_range<Context_iterator> Contexts;
 /// @{
 
 /*!
-Introduces an empty triangulation.
+introduces an empty triangulation.
 */
 Constrained_triangulation_plus_2(const Geom_traits& gt=Geom_traits());
 
@@ -172,9 +188,8 @@ Copy constructor.
 Constrained_triangulation_plus_2(const
 Constrained_triangulation_plus_2& ct);
 
-
 /*!
-Introduces a constrained triangulation
+introduces a constrained triangulation
 from the constraints in the range `[first,last)`.
 \tparam ConstraintIterator must be an `InputIterator` with the value type `std::pair<Point,Point>` or `Segment`.
 */
@@ -242,20 +257,22 @@ insert(PointIterator first, PointIterator last);
 /*!
 inserts the constraint segment `ab` in the triangulation.
 If the two points are equal the point is inserted but no constraint,
-and the default constructed `Constraint_id` is returned.
+and a default constructed `Constraint_id` is returned.
 */
 Constraint_id insert_constraint(Point a, Point b);
 
 /*!
-inserts the constraint `c`.
+inserts the constraint `c` in the triangulation.
+If the two points are equal the point is inserted but no constraint,
+and a default constructed `Constraint_id` is returned.
 */
-  void push_back(const std::pair<Point,Point>& c);
+void push_back(const std::pair<Point,Point>& c);
 
 /*!
 inserts a constraint whose endpoints are the vertices
 pointed by `va` and `vb` in the triangulation.
 If the two vertex handles are equal no constraint is inserted,
-and the default constructed `Constraint_id` is returned.
+and a default constructed `Constraint_id` is returned.
 */
 Constraint_id insert_constraint(Vertex_handle va, Vertex_handle vb);
 
@@ -264,9 +281,10 @@ inserts a polyline defined by the points in the range `[first,last)`
 and returns the constraint id.
 The polyline is considered as a closed curve if the first and last point are equal or if  `close == true`. This enables for example passing the vertex range of a `Polygon_2`.
 When traversing the vertices of a closed polyline constraint with a  `Vertices_in_constraint_iterator` the first and last vertex are the same.
-In case the range is empty `Constraint_id()` is returned.
-In case all points are equal the point is inserted but no constraint,
-and `Constraint_id()` is returned.
+In case the range is empty a default constructed `Constraint_id` is returned.
+In case the range contains only one point or all points are equal the point is inserted but no constraint,
+and a default constructed `Constraint_id` is returned.
+
 \tparam PointIterator must be an `InputIterator` with the value type `Point`.
 */
 template < class PointIterator>
@@ -280,22 +298,56 @@ is used to improve efficiency.
 More precisely, all endpoints are inserted prior to the segments and according to the order provided by the spatial sort.
 Once endpoints have been inserted, the segments are inserted in the order of the input iterator,
 using the vertex handles of its endpoints.
+In case the constraints are degenerate the points are inserted, but no
+constraints.
+
+\tparam ConstraintIterator is an `InputIterator` with value type `std::pair<Point,Point>` or `Segment`
 
 \return the number of inserted points.
-\tparam ConstraintIterator must be an `InputIterator` with the value type `std::pair<Point,Point>` or `Segment`.
 */
 template <class ConstraintIterator>
 std::size_t insert_constraints(ConstraintIterator first, ConstraintIterator last);
 
 /*!
+Same as `insert_constraints(begin,end)` except that duplicated pairs of points are only considered once.
+
+Inserting the same constraint several times may cause problems in
+case of intersecting segments and non-exact constructions.
+
+\return the number of inserted points.
+\tparam ConstraintIterator is an `InputIterator` with value type `std::pair<Point,Point>` or `Segment`.
+*/
+template <class ConstraintIterator>
+std::size_t insert_unique_constraints(ConstraintIterator first, ConstraintIterator last);
+
+/*!
 Same as above except that each constraint is given as a pair of indices of the points
 in the range [points_first, points_last). The indices must go from 0 to `std::distance(points_first, points_last)`
-\tparam PointIterator is an `InputIterator` with the value type `Point`.
-\tparam IndicesIterator is an `InputIterator` with `std::pair<Int, Int>` where `Int` is an integral type implicitly convertible to `std::size_t`
+
+\tparam PointIterator is an `InputIterator` with value type `Point`.
+\tparam IndicesIterator is an `InputIterator` with value type `std::pair<Int, Int>` where
+`Int` is an integral type implicitly convertible to `std::size_t`
+
+\note points are inserted even if they are not an endpoint of a constraint.
+\return the number of inserted points.
 */
 template <class PointIterator, class IndicesIterator>
 std::size_t insert_constraints(PointIterator points_first, PointIterator points_last,
                                IndicesIterator indices_first, IndicesIterator indices_last);
+
+/*!
+Same as `insert_constraint(points_first, points_last, indices_first, indices_last)` except that duplicated pair of points are only considered once.
+
+Inserting the same constraint several times may cause problems in
+case of intersecting segments and non-exact constructions.
+
+\return the number of inserted points.
+\tparam PointIterator is an `InputIterator` with value type `Point`.
+\tparam IndicesIterator is an `InputIterator` with value type `std::pair<Int, Int>` where `Int` is an integral type implicitly convertible to `std::size_t`
+*/
+template <class PointIterator, class IndicesIterator>
+std::size_t insert_unique_constraints(PointIterator points_first, PointIterator points_last,
+                                      IndicesIterator indices_first, IndicesIterator indices_last);
 
 
 /*!
@@ -331,6 +383,11 @@ void remove_constraint(Constraint_id cid);
 
 /// \name Access
 /// @{
+///
+/// \note
+/// Since CGAL-6.1, the value type of the range returned by `subconstraints()` has changed from
+/// `const std::pair<const Subconstraint, std::list<Context>*>` to `Subconstraint`.
+/// The old range type is now returned by the function `subconstraints_and_contexts()`.
 
 /*!
 returns a `Constraint_iterator` that points at the first
@@ -365,6 +422,22 @@ returns a range of subconstraints.
 Subconstraints subconstraints() const;
 
 /*!
+returns a `Subconstraint_and_contexts_iterator` pointing at the first
+subconstraint of the triangulation.
+*/
+Subconstraint_and_contexts_iterator subconstraints_and_contexts_begin() const;
+
+/*!
+returns the past-the-end iterator of the subconstraints of the triangulation.
+*/
+Subconstraint_and_contexts_iterator subconstraints_and_contexts_end() const;
+
+/*!
+returns a range of subconstraints with the contexts of their enclosing constraints.
+*/
+Subconstraints_and_contexts subconstraints_and_contexts() const;
+
+/*!
 returns the number of constraints enclosing the subconstraint
 `(va,vb)`.
 \pre `va` and `vb` refer to the vertices of a constrained edge of the triangulation.
@@ -380,8 +453,7 @@ enclosing the subconstraint `(va,vb)`.
 Context context(Vertex_handle va, Vertex_handle vb) const;
 
 /*!
-returns an iterator pointing at the first `Context`
-of the sequence of contexts
+returns an iterator pointing at the first `Context` of the sequence of contexts
 corresponding to the constraints enclosing the subconstraint `(va,vb)`.
 \pre `va` and `vb` refer to the vertices of a constrained edge of the triangulation.
 */
@@ -389,8 +461,7 @@ Context_iterator contexts_begin(Vertex_handle va,
                                 Vertex_handle vb) const;
 
 /*!
-returns an iterator past the end `Context`
-of the sequence of contexts
+returns a past-the-end iterator of the sequence of contexts
 corresponding to the constraints enclosing the subconstraint `(va,vb)`.
 \pre `va` and `vb` refer to the vertices of a constrained edge of the triangulation.
 */
@@ -468,7 +539,7 @@ typedef unspecified_type Points_in_constraint_iterator;
 /*!
 \cgalAdvancedFunction
 \cgalAdvancedBegin
-Returns an iterator to the first point on the constraint before any simplification step.
+returns an iterator to the first point on the constraint before any simplification step.
 \cgalAdvancedEnd
 */
 Points_in_constraint_iterator points_in_constraint_begin(Constraint_id cid) const;
@@ -476,7 +547,7 @@ Points_in_constraint_iterator points_in_constraint_begin(Constraint_id cid) cons
 /*!
 \cgalAdvancedFunction
 \cgalAdvancedBegin
-Returns an iterator past the last point on the constraint before any simplification step.
+returns an iterator past the last point on the constraint before any simplification step.
 \cgalAdvancedEnd
 */
 Points_in_constraint_iterator points_in_constraint_end(Constraint_id cid) const ;
@@ -484,7 +555,7 @@ Points_in_constraint_iterator points_in_constraint_end(Constraint_id cid) const 
 /*!
 \cgalAdvancedFunction
 \cgalAdvancedBegin
-Removes the vertex at `vicq` from the constraint and the triangulation.
+removes the vertex at `vicq` from the constraint and the triangulation.
 The point of that vertex remains stored in the sequence of original points
 of the constraint until `remove_points_without_corresponding_vertex(Constraint_id)`
 or `remove_points_without_corresponding_vertex()` is called.
@@ -499,6 +570,7 @@ constraints based on a cost and stop function.
 \pre The vertex referred by vicq is not contained in any other constraint.
 \pre Let `vip` and `vir` be defined as `vip = std::prev(vicq)` and `vir = std::next(vicr)`.
 \pre The line segment between `*vicp->point()` and `*vicr->point()` must not intersect any constraint.
+
 \cgalAdvancedEnd
  */
 void
@@ -507,7 +579,7 @@ simplify(Vertices_in_constraint_iterator vicq);
 /*!
 \cgalAdvancedFunction
 \cgalAdvancedBegin
-Removes the original points that correspond to vertices in the constraint `cid` which have
+removes the original points that correspond to vertices in the constraint `cid` which have
 been removed by the `simplify()` function.
 \cgalAdvancedEnd
 */
@@ -518,7 +590,7 @@ remove_points_without_corresponding_vertex(Constraint_id cid);
 /*!
 \cgalAdvancedFunction
 \cgalAdvancedBegin
-Removes all original points that correspond to vertices in the constraints which have
+removes all original points that correspond to vertices in the constraints which have
 been removed by the `simplify()` function.
 \cgalAdvancedEnd
  */
@@ -527,11 +599,10 @@ remove_points_without_corresponding_vertex();
 
 /// @}
 
-
 }; /* end Constrained_triangulation_plus_2 */
 
 /*!
-Writes the triangulation as for `Tr`, then writes one constraint per line, starting with the number
+writes the triangulation as for `Tr`, then writes one constraint per line, starting with the number
 of vertices and the indices of the vertices of the constraint.
 
 \relates Constrained_triangulation_plus_2
@@ -540,14 +611,12 @@ of vertices and the indices of the vertices of the constraint.
 template <typename  Tr>
 std::ostream & operator<<(std::ostream& os, const Constrained_triangulation_plus_2<Tr> &ctp);
 
-
 /*!
-Reads a triangulation from stream `is` and assigns it to the triangulation.
+reads a triangulation from stream `is` and assigns it to the triangulation.
 
 \relates Constrained_triangulation_plus_2
 */
 template <typename  Tr>
 std::istream & operator>>(std::istream& is, Constrained_triangulation_plus_2<Tr> &ctp);
-
 
 } /* end namespace CGAL */

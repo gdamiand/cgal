@@ -1,4 +1,4 @@
-// Copyright(c) 2022  GeometryFactory (France).
+// Copyright (c) 2022  GeometryFactory (France).
 // All rights reserved.
 //
 // This file is part of CGAL (www.cgal.org).
@@ -14,13 +14,14 @@
 
 #include <CGAL/license/Triangulation_2.h>
 
-#include <list>
-#include <deque>
+#include <CGAL/assertions.h>
+#include <CGAL/Triangulation_2/internal/In_domain.h>
+#include <CGAL/Unique_hash_map.h>
 
 #include <boost/property_map/property_map.hpp>
 
-#include <CGAL/Triangulation_2/internal/In_domain.h>
-#include <CGAL/Unique_hash_map.h>
+#include <deque>
+#include <list>
 
 namespace CGAL {
 
@@ -37,6 +38,8 @@ mark_domain_in_triangulation(CT& ct,
 {
   typedef typename CT::Face_handle Face_handle;
   typedef typename CT::Edge Edge;
+
+  CGAL_precondition(ct.dimension() == 2);
 
   if(nesting_level[start] != -1){
     return;

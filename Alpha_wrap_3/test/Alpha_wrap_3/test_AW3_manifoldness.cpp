@@ -1,11 +1,13 @@
 #define CGAL_AW3_TIMER
 #define CGAL_AW3_DEBUG
+#define CGAL_AW3_DEBUG_MANIFOLDNESS
 //#define CGAL_AW3_DEBUG_STEINER_COMPUTATION
 //#define CGAL_AW3_DEBUG_INITIALIZATION
 //#define CGAL_AW3_DEBUG_QUEUE
+#define CGAL_AW3_COMPUTE_AND_STORE_STEINER_INFO_AT_GATE_CREATION
 
 #include <CGAL/alpha_wrap_3.h>
-#include "alpha_wrap_validation.h"
+#include <CGAL/Alpha_wrap_3/internal/validation.h>
 
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -45,7 +47,6 @@ void alpha_wrap_triangle_manifoldness(Mesh& input_mesh,
 
   Mesh nm_wrap;
   CGAL::alpha_wrap_3(input_mesh, alpha, offset, nm_wrap,
-                     CGAL::parameters::default_values(),
                      CGAL::parameters::do_enforce_manifoldness(false));
 
   std::cout << "Result: " << vertices(nm_wrap).size() << " vertices, " << faces(nm_wrap).size() << " faces" << std::endl;
@@ -57,7 +58,7 @@ void alpha_wrap_triangle_manifoldness(Mesh& input_mesh,
     assert(AW3::internal::has_expected_Hausdorff_distance(nm_wrap, input_mesh, alpha, offset));
   }
 
-  assert(AW3::internal::check_edge_length(nm_wrap, alpha));
+  assert(AW3::internal::has_bounded_edge_length(nm_wrap, alpha));
 
   FT base_vol = 0;
   if(!is_closed(nm_wrap))
@@ -67,7 +68,6 @@ void alpha_wrap_triangle_manifoldness(Mesh& input_mesh,
 
   Mesh m_wrap;
   CGAL::alpha_wrap_3(input_mesh, alpha, offset, m_wrap,
-                     CGAL::parameters::default_values(),
                      CGAL::parameters::do_enforce_manifoldness(true));
 
 //  CGAL::IO::write_polygon_mesh("last.off", wrap, CGAL::parameters::stream_precision(17));

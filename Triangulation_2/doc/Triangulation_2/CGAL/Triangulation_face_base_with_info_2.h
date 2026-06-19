@@ -19,9 +19,11 @@ and is actually not used in `Triangulation_face_base_with_info_2` .
 \tparam Fb  is a face base class from which
 `Triangulation_face_base_with_info_2` derives.
 
-\cgalModels Because `Triangulation_face_base_with_info_2` derives from the class instantiating its third
+\cgalModelsBareBegin
+\cgalModelsBare{Because `Triangulation_face_base_with_info_2` derives from the class instantiating its third
 parameter, it will be a model of the same face base concept as its parameter:
-`TriangulationFaceBase_2`,  `ConstrainedTriangulationFaceBase_2`, or `RegularTriangulationFaceBase_2`
+`TriangulationFaceBase_2`,  `ConstrainedTriangulationFaceBase_2`, or `RegularTriangulationFaceBase_2`}
+\cgalModelsBareEnd
 
 \sa `CGAL::Triangulation_face_base_2<Traits,Fb>`
 \sa `CGAL::Constrained_triangulation_face_base_2<Traits,Fb>`
@@ -46,12 +48,12 @@ typedef Info Info;
 /// @{
 
 /*!
-Returns a const reference to the object of type `Info` stored in the face.
+returns a const reference to the object of type `Info` stored in the face.
 */
 const Info& info() const;
 
 /*!
-Returns a reference to the object of type `Info` stored in the face.
+returns a reference to the object of type `Info` stored in the face.
 */
 Info & info();
 
