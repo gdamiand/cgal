@@ -28,7 +28,7 @@
 #include <tbb/info.h>
 #include <tbb/parallel_for.h>
 
-#define BENCHMARK_ITERATIONS 100
+#define BENCHMARK_ITERATIONS 1000
 
 using namespace CGAL;
 
@@ -58,21 +58,15 @@ template <unsigned int d>
 using One_dart_per_cell_range = LCC::One_dart_per_cell_range<d>;
 
 void import_bunny_into_lcc(LCC_Concurrent& lcc) {
-    std::ifstream inputFile("../data/bunny00.off");
-
-    CGAL::import_from_polyhedron_3_flux<LCC_Concurrent>(lcc, inputFile);
+    CGAL::load_off<LCC_Concurrent>(lcc, "../data/bunny00.off");
 }
 
 void import_bunny_into_lcc(LCC_Concurrent_char& lcc) {
-    std::ifstream inputFile("../data/bunny00.off");
-
-    CGAL::import_from_polyhedron_3_flux<LCC_Concurrent_char>(lcc, inputFile);
+    CGAL::load_off<LCC_Concurrent_char>(lcc, "../data/bunny00.off");
 }
 
 void import_bunny_into_lcc(LCC& lcc) {
-    std::ifstream inputFile("../data/bunny00.off");
-
-    CGAL::import_from_polyhedron_3_flux<LCC>(lcc, inputFile);
+    CGAL::load_off<LCC>(lcc, "../data/bunny00.off");
 }
 
 void benchmark_bunny_one_dart_per_cell_iterator_concurrent()

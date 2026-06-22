@@ -86,9 +86,7 @@ void iterate_over_darts_concurrent(LCC& lcc) {
 
 template <typename LCC>
 void import_bunny_into_lcc(LCC& lcc) {
-    std::ifstream inputFile("../data/bunny00.off");
-
-    CGAL::import_from_polyhedron_3_flux<LCC>(lcc, inputFile);
+    CGAL::load_off<LCC>(lcc, "../data/bunny00.off");
 }
 
 void iterator_compact_container() {

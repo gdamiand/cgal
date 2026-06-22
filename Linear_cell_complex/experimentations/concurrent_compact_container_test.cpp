@@ -25,16 +25,14 @@ using namespace CGAL;
 
 struct Concurrent_items : public Linear_cell_complex_min_items
 {
-  //typedef CGAL::Tag_true Use_concurrent_container;
+  typedef CGAL::Tag_true Use_concurrent_container;
 };
 
 typedef Linear_cell_complex_for_combinatorial_map<3, 3, Linear_cell_complex_traits<3>, Concurrent_items> LCC;
 typedef LCC::Point Point;
 
 void import_bunny_into_lcc(LCC& lcc, int thread_id) {
-    std::ifstream inputFile("../data/bunny00.off");
-
-    CGAL::import_from_polyhedron_3_flux<LCC>(lcc, inputFile);
+    CGAL::load_off<LCC>(lcc, "../data/bunny00.off");
 }
 
 void import_hexaedron_into_lcc(LCC& lcc)

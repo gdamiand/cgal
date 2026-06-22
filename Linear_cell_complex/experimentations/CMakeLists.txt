@@ -4,7 +4,7 @@
 cmake_minimum_required(VERSION 3.1...3.23)
 project(linear_cell_complex_experimentations)
 
-find_package(CGAL REQUIRED OPTIONAL_COMPONENTS Qt5)
+find_package(CGAL REQUIRED OPTIONAL_COMPONENTS Qt6)
 find_package( TBB REQUIRED )
 include(CGAL_TBB_support)
 
@@ -20,7 +20,7 @@ create_single_source_cgal_program("multithread_dart_iteration.cpp")
 create_single_source_cgal_program("concurrent_compact_container_test.cpp")
 create_single_source_cgal_program("benchmark.cpp")
 
-if(CGAL_Qt5_FOUND)
+if(CGAL_Qt6_FOUND)
   target_link_libraries(iterate_over_vertex PUBLIC CGAL::CGAL_Basic_viewer)
 endif()
 
