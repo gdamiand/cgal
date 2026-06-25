@@ -53,6 +53,12 @@ namespace CGAL {
   template<unsigned int, unsigned int, class, class, class>
   class GMap_linear_cell_complex_storage_with_index;
 
+  template<typename>
+  class Mark_management_bitset_on_dart;
+
+  template<typename>
+  class Mark_management_bitset_on_dart_with_index;
+
   namespace internal {
 
     template<class, class>
@@ -110,6 +116,12 @@ namespace CGAL {
 
     template<class, class>
     friend struct internal::Init_id;
+
+    template<typename>
+    friend class Mark_management_bitset_on_dart;
+
+    template<typename>
+    friend class Mark_management_bitset_on_dart_with_index;
 
     typedef Dart_without_info<d,Refs, WithId>    Self;
     typedef typename Refs::Dart_descriptor       Dart_descriptor;
@@ -292,6 +304,12 @@ namespace CGAL {
 
     template<unsigned int, unsigned int, class, class, class>
     friend class GMap_linear_cell_complex_storage_with_index;
+
+    template<typename>
+    friend class Mark_management_bitset_on_dart;
+
+    template<typename>
+    friend class Mark_management_bitset_on_dart_with_index;
 
     typedef Dart<d, Refs, Info_, WithID> Self;
     typedef Info_                        Info;
