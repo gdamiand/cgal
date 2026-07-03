@@ -16,15 +16,72 @@
 #include <bitset>
 
 namespace CGAL {
-
-  template<typename Refs>
-  class Mark_management_fix
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename Refs, typename Refs::size_type NUMBER_OF_MARKS=32>
+  class Mark_management_basic
   {
   public:
+    class Exception_no_more_available_mark {};
+
     using size_type=typename Refs::size_type;
 
     /// Number of marks
-    static const size_type NB_MARKS = 32;
+    static const size_type NB_MARKS=NUMBER_OF_MARKS;
+
+    Mark_management_basic()
+    { reset(); }
+
+    // Reset all the data used to reserve marks
+    void reset()
+    {
+      mnb_used_marks=0;
+      for ( size_type i=0; i<NB_MARKS; ++i)
+      {
+        mfree_marks_stack[i]       =i;
+        mindex_marks[i]            =i;
+        mnb_marked_darts[i]        =0;
+        mnb_times_reserved_marks[i]=0;
+      }
+    }
+
+    // Call after a clear of all the darts: only reset the number of marked
+    // darts, but keep the reserved marks as it.
+    void clear_darts()
+    {
+      for ( size_type i=0; i<NB_MARKS; ++i)
+      { mnb_marked_darts[i]=0; }
+    }
+
+    template<typename Mark_management2>
+    void copy(const Mark_management2& other)
+    {
+      // Reserve all marks of amap not yet reserved
+      for (size_type i=0; i<NB_MARKS; ++i)
+      {
+        if(!is_reserved(i) && other.is_reserved(i))
+        {
+          CGAL_assertion(mnb_used_marks<NB_MARKS);
+          // 1) Remove mark i from mfree_marks_stack (replace it by the last free mark)
+          mfree_marks_stack[mindex_marks[i]]=mfree_marks_stack[NB_MARKS-mnb_used_marks-1];
+          mindex_marks[mfree_marks_stack[mindex_marks[i]]]=mindex_marks[i];
+          // 2) Update use mark stack
+          mused_marks_stack[mnb_used_marks]=i;
+          mindex_marks[i]=mnb_used_marks;
+          mnb_times_reserved_marks[i]=1;
+          ++mnb_used_marks;
+        }
+      }
+    }
+
+    void swap(Mark_management_basic& other)
+    {
+      std::swap(mnb_times_reserved_marks, other.mnb_times_reserved_marks);
+      std::swap(mnb_used_marks, other.mnb_used_marks);
+      std::swap(mindex_marks, other.mindex_marks);
+      std::swap(mfree_marks_stack, other.mfree_marks_stack);
+      std::swap(mused_marks_stack, other.mused_marks_stack);
+      std::swap(mnb_marked_darts, other.mnb_marked_darts);
+    }
 
     /** Count the number of used marks.
      * @return the number of used marks.
@@ -41,40 +98,6 @@ namespace CGAL {
       return (mnb_times_reserved_marks[amark]!=0);
     }
 
-    /**  Count the number of marked darts for a given mark.
-     * @param amark the mark index.
-     * @return the number of marked darts for amark.
-     */
-    size_type number_of_marked_darts(size_type amark) const
-    {
-      CGAL_assertion( is_reserved(amark) );
-      return mnb_marked_darts[amark];
-    }
-
-    /**  Count the number of unmarked darts for a given mark.
-     * @param amark the mark index.
-     * @return the number of unmarked darts for amark.
-     */
-    size_type number_of_unmarked_darts(size_type amark) const
-    {
-      CGAL_assertion( is_reserved(amark) );
-      return number_of_darts() - number_of_marked_darts(amark);
-    }
-
-    /** Tests if all the darts are unmarked for a given mark.
-     * @param amark the mark index.
-     * @return true iff all the darts are unmarked for amark.
-     */
-    bool is_whole_map_unmarked(size_type amark) const
-    { return number_of_marked_darts(amark) == 0; }
-
-    /** Tests if all the darts are marked for a given mark.
-     * @param amark the mark index.
-     * @return true iff all the darts are marked for amark.
-     */
-    bool is_whole_map_marked(size_type amark) const
-    {  return number_of_marked_darts(amark) == number_of_darts(); }
-
     /** Reserve a new mark.
      * Get a new free mark and return its index.
      * All the darts are unmarked for this mark.
@@ -83,7 +106,7 @@ namespace CGAL {
      */
     size_type get_new_mark() const
     {
-      if (mnb_used_marks == NB_MARKS)
+      if (mnb_used_marks==NB_MARKS)
       {
         std::cerr << "Not enough Boolean marks: "
                      "increase NB_MARKS in item class." << std::endl;
@@ -91,15 +114,13 @@ namespace CGAL {
         throw Exception_no_more_available_mark();
       }
 
-      size_type m = mfree_marks_stack[mnb_used_marks];
-      mused_marks_stack[mnb_used_marks] = m;
+      size_type m=mfree_marks_stack[mnb_used_marks];
+      mused_marks_stack[mnb_used_marks]=m;
 
-      mindex_marks[m] = mnb_used_marks;
+      mindex_marks[m]=mnb_used_marks;
       mnb_times_reserved_marks[m]=1;
 
       ++mnb_used_marks;
-      mmark_management.on_get_new_mark(*this, m);
-      CGAL_assertion(is_whole_map_unmarked(m));
 
       return m;
     }
@@ -127,123 +148,13 @@ namespace CGAL {
      * unmarked darts become marked (in constant time operation).
      * @param amark the mark index
      */
-    void negate_mark(size_type amark) const
+    void negate_mark(size_type amark, std::size_t nb_darts) const
     {
       CGAL_assertion( is_reserved(amark) );
-
-      mnb_marked_darts[amark] = number_of_darts() - mnb_marked_darts[amark];
-      mmark_management.flip_mask(amark);
+      mnb_marked_darts[amark]=nb_darts-mnb_marked_darts[amark];
     }
 
-    /** Tests if a given dart is marked for a given mark.
-     * @param adart the dart to test.
-     * @param amark the given mark.
-     * @return true iff adart is marked for the mark amark.
-     */
-    bool is_marked(Dart_const_descriptor adart, size_type amark) const
-    {
-      CGAL_assertion( is_reserved(amark) );
-
-      return mmark_management.get_dart_mark(*this, adart, amark)!=
-             mmark_management.get_mask_mark(amark);
-    }
-
-    /** Set the mark of a given dart to a state (on or off).
-     * @param adart the dart.
-     * @param amark the given mark.
-     * @param astate the state of the mark (on or off).
-     */
-    void set_mark_to(Dart_const_descriptor adart, size_type amark,
-                     bool astate) const
-    {
-      CGAL_assertion( adart != null_dart_descriptor );
-      CGAL_assertion( is_reserved(amark) );
-
-      if (is_marked(adart, amark) != astate)
-      {
-        if (astate) ++mnb_marked_darts[amark];
-        else --mnb_marked_darts[amark];
-
-        flip_dart_mark(adart, amark);
-      }
-    }
-
-    /** Mark the given dart.
-     * @param adart the dart.
-     * @param amark the given mark.
-     */
-    void mark(Dart_const_descriptor adart, size_type amark) const
-    {
-      CGAL_assertion( adart != null_dart_descriptor );
-      CGAL_assertion( is_reserved(amark) );
-
-      if (is_marked(adart, amark)) return;
-
-      ++mnb_marked_darts[amark];
-      mmark_management.flip_dart_mark(*this, adart, amark);
-    }
-
-    /** Unmark the given dart.
-     * @param adart the dart.
-     * @param amark the given mark.
-     */
-    void unmark(Dart_const_descriptor adart, size_type amark) const
-    {
-      CGAL_assertion( adart != null_dart_descriptor );
-      CGAL_assertion( is_reserved(amark) );
-
-      if (!is_marked(adart, amark)) return;
-
-      --mnb_marked_darts[amark];
-      mmark_management.flip_dart_mark(*this, adart, amark);
-    }
-
-    /** Mark null_dart (used as a sentinel in iterators).
-     * As null dart does not belong to the set of darts, it is not counted
-     * as number of marked darts.
-     * @param amark the given mark.
-     */
-    void mark_null_dart(size_type amark) const
-    {
-      CGAL_assertion( is_reserved(amark) );
-      mmark_management.set_dart_mark(*this, null_dart_descriptor, amark,
-                                     !mmark_management.get_mask_mark(amark));
-    }
-
-    /** Unmark null_dart.
-     * @param amark the given mark.
-     */
-    void unmark_null_dart(size_type amark) const
-    {
-      CGAL_assertion( is_reserved(amark) );
-      mmark_management.set_dart_mark(*this, null_dart_descriptor, amark,
-                                     mmark_management.get_mask_mark(amark));
-    }
-
-    /** Unmark all the darts of the map for a given mark.
-     * If all the darts are marked or unmarked, this operation takes \cgalBigO{1}
-     * operations, otherwise it traverses all the darts of the map.
-     * @param amark the given mark.
-     */
-    void unmark_all(size_type amark) const
-    {
-      CGAL_assertion( is_reserved(amark) );
-
-      if ( is_whole_map_marked(amark) )
-      {
-        negate_mark(amark);
-      }
-      else if ( !is_whole_map_unmarked(amark) )
-      {
-        for ( typename Dart_range::const_iterator it(darts().begin()),
-             itend(darts().end()); it!=itend; ++it)
-          unmark(it, amark);
-      }
-      CGAL_assertion(is_whole_map_unmarked(amark));
-      unmark_null_dart(amark);
-    }
-
-    /** Free a given mark, previously calling unmark_all_darts.
+    /** Free a given mark.
      * @param amark the given mark.
      */
     void free_mark(size_type amark) const
@@ -255,8 +166,6 @@ namespace CGAL {
         --mnb_times_reserved_marks[amark];
         return;
       }
-
-      unmark_all(amark);
 
       // 1) We remove amark from the array mused_marks_stack by
       //    replacing it with the last mark in this array.
@@ -270,53 +179,117 @@ namespace CGAL {
       mindex_marks[amark] = mnb_used_marks;
 
       mnb_times_reserved_marks[amark]=0;
-
-      mmark_management.on_free_mark(*this, amark);
     }
 
+    /**  Count the number of marked darts for a given mark.
+     * @param amark the mark index.
+     * @return the number of marked darts for amark.
+     */
+    size_type number_of_marked_darts(size_type amark) const
+    {
+      CGAL_assertion(is_reserved(amark));
+      return mnb_marked_darts[amark];
+    }
 
-  protected:
+      protected:
     /// Number of times each mark is reserved. 0 if the mark is free.
-    mutable size_type mnb_times_reserved_marks[NB_MARKS];
+    mutable std::array<size_type, NB_MARKS> mnb_times_reserved_marks{0};
 
     /// Number of used marks.
-    mutable size_type mnb_used_marks;
+    mutable size_type mnb_used_marks=0;
 
     /// Index of each mark, in mfree_marks_stack or in mfree_marks_stack.
-    mutable size_type mindex_marks[NB_MARKS];
+    mutable std::array<size_type, NB_MARKS> mindex_marks{0};
 
     /// "Stack" of free marks.
-    mutable size_type mfree_marks_stack[NB_MARKS];
+    mutable std::array<size_type, NB_MARKS> mfree_marks_stack{0};
 
     /// "Stack" of used marks.
-    mutable size_type mused_marks_stack[NB_MARKS];
+    mutable std::array<size_type, NB_MARKS> mused_marks_stack{0};
 
     /// Number of marked darts for each used marks.
-    mutable size_type mnb_marked_darts[NB_MARKS];
+    mutable std::array<size_type, NB_MARKS> mnb_marked_darts{0};
   };
-
-  template<typename Refs>
-  class Mark_management_bitset_on_dart
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename Refs, typename Refs::size_type NUMBER_OF_MARKS=32>
+  class Mark_management_with_bitset: public Mark_management_basic<Refs, 32>
   {
   public:
+    using Base=Mark_management_basic<Refs, 32>;
+    using size_type=typename Refs::size_type;
+    using Base::NB_MARKS;
+
+    void reset()
+    {
+      Base::reset();
+      mmask_marks.reset();
+    }
+
+    void swap(Mark_management_with_bitset<Refs>& other)
+    {
+      Base::swap(other);
+      std::swap(mmask_marks, other.mmask_marks);
+    }
+
+    void negate_mark(size_type amark, std::size_t nb_darts) const
+    {
+      Base::negate_mark(amark, nb_darts);
+      mmask_marks.flip(amark);
+    }
+
+    /** Get the mask associated to a given mark.
+     * @param amark the mark.
+     * @return the mask associated to mark amark.
+     */
+    bool get_mask_mark(size_type amark) const
+    {
+      CGAL_assertion(amark>=0 && amark<NB_MARKS);
+      return mmask_marks[amark];
+    }
+
+    /** Unmark all the darts of the map for a given mark if this is possible
+     *  in constant time
+     * @param amark the given mark.
+     */
+    bool unmark_all_if_possible(size_type amark, std::size_t nb_darts) const
+    {
+      CGAL_assertion(this->is_reserved(amark));
+
+      if (this->mnb_marked_darts[amark]==nb_darts)
+      { negate_mark(amark, nb_darts); } // all darts are marked
+
+      return this->mnb_marked_darts[amark]==0;
+    }
+
+  protected:
+    /// Mask marks to know the value of unmark dart, for each index i.
+    mutable std::bitset<NB_MARKS> mmask_marks;
+  };
+  /////////////////////////////////////////////////////////////////////////////
+  template<typename Refs>
+  class Mark_management_bitset_on_dart: public Mark_management_with_bitset<Refs, 32>
+  {
+  public:
+    using Base=Mark_management_with_bitset<Refs, 32>;
     using size_type=typename Refs::size_type;
     using Dart_descriptor=typename Refs::Dart_descriptor;
     using Dart_const_descriptor=typename Refs::Dart_const_descriptor;
-
-
-    void reset()
-    { mmask_marks.reset(); }
-
-    void swap(Mark_management_bitset_on_dart<Refs>& other)
-    { std::swap(mmask_marks, other.mmask_marks); }
+    using Base::NB_MARKS;
 
     /// on_new_dart is called when a new dart is created.
     void on_new_dart(const Refs& storage, Dart_descriptor ADart) const
-    { set_dart_marks(storage, ADart, mmask_marks); }
+    { set_dart_marks(storage, ADart, this->mmask_marks); }
 
     /// on_delete_dart is called when a dart is deleted
     void on_delete_dart(const Refs& storage, Dart_descriptor ADart) const
-    {}
+    {
+      // We update the number of marked darts.
+      for (size_type i=0; i<this->mnb_used_marks; ++i)
+      {
+        if (is_marked(storage, ADart, this->mused_marks_stack[i]))
+        { --this->mnb_marked_darts[this->mused_marks_stack[i]]; }
+      }
+    }
 
     /// on_get_new_mark is called when a new mark is reserved.
     void on_get_new_mark(const Refs& storage, size_type amark) const
@@ -326,8 +299,21 @@ namespace CGAL {
     void on_free_mark(const Refs& storage, size_type amark) const
     {}
 
+    /// copy the marks of ADart1 on ADart2
+    template<typename Refs2, typename Mark_management2>
+    void copy_marks_of_dart(const Refs& storage, Dart_const_descriptor ADart1,
+                            const Refs2& storage2, const Mark_management2& mm2,
+                            typename Refs2::Dart_const_descriptor ADart2) const
+    {
+      for (size_type i=0; i<this->mnb_used_marks; ++i)
+      {
+        if(is_marked(storage, ADart1, this->mused_marks_stack[i]))
+        { mm2.set_mark_to(storage2, ADart2, this->mused_marks_stack[i], true); }
+      }
+    }
+
     /// Return the mark value of dart a given mark number.
-    bool get_dart_mark(const Refs& storage,
+    bool get_dart_mark(const Refs& /* storage */,
                        Dart_const_descriptor ADart, size_type amark) const
     {
       CGAL_assertion( ADart!=nullptr );
@@ -335,36 +321,33 @@ namespace CGAL {
     }
 
     /// Set the mark of a given mark number to a given value.
-    void set_dart_mark(const Refs& storage,
+    void set_dart_mark(const Refs& /* storage */,
                        Dart_const_descriptor ADart,
                        size_type amark, bool avalue) const
     {
-      CGAL_assertion( ADart!=nullptr );
+      CGAL_assertion(ADart!=nullptr);
       ADart->set_mark(amark, avalue);
     }
 
     /// Flip the mark of a given mark number to a given value.
-    void flip_dart_mark(const Refs& storage,
+    void flip_dart_mark(const Refs& /* storage */,
                         Dart_const_descriptor ADart, size_type amark) const
     {
-      CGAL_assertion( ADart!=nullptr );
+      CGAL_assertion(ADart!=nullptr);
       ADart->flip_mark(amark);
     }
 
-    void flip_mask(size_type amark) const
-    { mmask_marks.flip(amark); }
-
     /// Set simultaneously all the marks of this dart to a given value.
-    void set_dart_marks(const Refs& storage,
+    void set_dart_marks(const Refs& /* storage */,
                         Dart_const_descriptor ADart,
                         const std::bitset<NB_MARKS>& amarks) const
     {
-      CGAL_assertion( ADart!=nullptr );
+      CGAL_assertion(ADart!=nullptr);
       ADart->set_marks(amarks);
     }
 
     /// Return all the marks of a dart.
-    std::bitset<NB_MARKS> get_dart_marks(const Refs& storage,
+    std::bitset<NB_MARKS> get_dart_marks(const Refs& /* storage */,
                                          Dart_const_descriptor ADart) const
     {
       CGAL_assertion( ADart!=nullptr );
@@ -378,7 +361,7 @@ namespace CGAL {
     void set_marks(const Refs& storage,
                    Dart_const_descriptor adart,
                    const std::bitset<NB_MARKS> & amarks) const
-    { set_dart_marks(storage, adart, amarks ^ mmask_marks); }
+    { set_dart_marks(storage, adart, amarks ^ this->mmask_marks); }
 
     /** Get simultaneously all the marks of a given dart.
      * @param adart the dart.
@@ -386,47 +369,68 @@ namespace CGAL {
      */
     std::bitset<NB_MARKS> get_marks(const Refs& storage,
                                     Dart_const_descriptor adart) const
-    { return get_dart_marks(storage, adart) ^ mmask_marks; }
+    { return get_dart_marks(storage, adart) ^ this->mmask_marks; }
 
-    /** Get the mask associated to a given mark.
-     * @param amark the mark.
-     * @return the mask associated to mark amark.
+    /** Tests if a given dart is marked for a given mark.
+     * @param adart the dart to test.
+     * @param amark the given mark.
+     * @return true iff adart is marked for the mark amark.
      */
-    bool get_mask_mark(size_type amark) const
+    bool is_marked(const Refs& storage,
+                   Dart_const_descriptor adart, size_type amark) const
     {
-      CGAL_assertion(amark>=0 && amark<NB_MARKS);
-      return mmask_marks[amark];
+      CGAL_assertion(this->is_reserved(amark));
+      return get_dart_mark(storage, adart, amark)!=this->get_mask_mark(amark);
     }
 
-  protected:
-    /// Mask marks to know the value of unmark dart, for each index i.
-    mutable std::bitset<NB_MARKS> mmask_marks;
-  };
+    /** Set the mark of a given dart to a state (on or off).
+     * @param adart the dart.
+     * @param amark the given mark.
+     * @param astate the state of the mark (on or off).
+     */
+    void set_mark_to(const Refs& storage,
+                     Dart_const_descriptor adart, size_type amark,
+                     bool astate) const
+    {
+      CGAL_assertion(adart!=storage.null_dart_descriptor );
+      CGAL_assertion(this->is_reserved(amark) );
 
+      if (is_marked(storage, adart, amark)!=astate)
+      {
+        if (astate) { ++this->mnb_marked_darts[amark]; }
+        else { --this->mnb_marked_darts[amark]; }
+
+        flip_dart_mark(storage, adart, amark);
+      }
+    }
+
+  };
+  /////////////////////////////////////////////////////////////////////////////
   template<typename Refs>
-  class Mark_management_bitset_on_dart_with_index
+  class Mark_management_bitset_on_dart_with_index:
+             public Mark_management_with_bitset<Refs, 32>
   {
   public:
+    using Base=Mark_management_with_bitset<Refs, 32>;
     using size_type=typename Refs::size_type;
     using Dart_descriptor=typename Refs::Dart_descriptor;
     using Dart_const_descriptor=typename Refs::Dart_const_descriptor;
-
-    /// Number of marks
-    static const size_type NB_MARKS = 32;
-
-    void reset()
-    { mmask_marks.reset(); }
-
-    void swap(Mark_management_bitset_on_dart_with_index<Refs>& other)
-    { std::swap(mmask_marks, other.mmask_marks); }
+    using Base::NB_MARKS;
 
     /// on_new_dart is called when a new dart is created.
     void on_new_dart(const Refs& storage, Dart_descriptor ADart) const
-    { set_dart_marks(storage, ADart, mmask_marks); }
+    { set_dart_marks(storage, ADart, this->mmask_marks); }
 
     /// on_delete_dart is called when a dart is deleted
     void on_delete_dart(const Refs& storage, Dart_descriptor ADart) const
-    {}
+    {
+      // We update the number of marked darts.
+      for (size_type i=0; i<this->mnb_used_marks; ++i)
+      {
+        if (is_marked(storage, ADart, this->mused_marks_stack[i]))
+        { --this->mnb_marked_darts[this->mused_marks_stack[i]]; }
+      }
+    }
 
     /// on_get_new_mark is called when a new mark is reserved.
     void on_get_new_mark(const Refs& storage, size_type amark) const
@@ -435,6 +439,19 @@ namespace CGAL {
     /// on_free_mark is called when a new mark is released.
     void on_free_mark(const Refs& storage, size_type amark) const
     {}
+
+    /// copy the marks of ADart1 on ADart2
+    template<typename Refs2, typename Mark_management2>
+    void copy_marks_of_dart(const Refs& storage, Dart_const_descriptor ADart1,
+                            const Refs2& storage2, const Mark_management2& mm2,
+                            typename Refs2::Dart_const_descriptor ADart2) const
+    {
+      for (size_type i=0; i<this->mnb_used_marks; ++i)
+      {
+        if(is_marked(storage, ADart1, this->mused_marks_stack[i]))
+        { mm2.set_mark_to(storage2, ADart2, this->mused_marks_stack[i], true); }
+      }
+    }
 
     /// Return the mark value of dart a given mark number.
     bool get_dart_mark(const Refs& storage,
@@ -451,9 +468,6 @@ namespace CGAL {
     void flip_dart_mark(const Refs& storage,
                         Dart_const_descriptor ADart, size_type amark) const
     { storage.mdarts[ADart].flip_mark(amark); }
-
-    void flip_mask(size_type amark) const
-    { mmask_marks.flip(amark); }
 
     /// Set simultaneously all the marks of this dart to a given value.
     void set_dart_marks(const Refs& storage,
@@ -473,7 +487,7 @@ namespace CGAL {
     void set_marks(const Refs& storage,
                    Dart_const_descriptor adart,
                    const std::bitset<NB_MARKS> & amarks) const
-    { set_dart_marks(storage, adart, amarks ^ mmask_marks); }
+    { set_dart_marks(storage, adart, amarks ^ this->mmask_marks); }
 
     /** Get simultaneously all the marks of a given dart.
      * @param adart the dart.
@@ -481,23 +495,42 @@ namespace CGAL {
      */
     std::bitset<NB_MARKS> get_marks(const Refs& storage,
                                     Dart_const_descriptor adart) const
-    { return get_dart_marks(storage, adart) ^ mmask_marks; }
+    { return get_dart_marks(storage, adart) ^ this->mmask_marks; }
 
-    /** Get the mask associated to a given mark.
-     * @param amark the mark.
-     * @return the mask associated to mark amark.
+    /** Tests if a given dart is marked for a given mark.
+     * @param adart the dart to test.
+     * @param amark the given mark.
+     * @return true iff adart is marked for the mark amark.
      */
-    bool get_mask_mark(size_type amark) const
+    bool is_marked(const Refs& storage,
+                   Dart_const_descriptor adart, size_type amark) const
     {
-      CGAL_assertion(amark>=0 && amark<NB_MARKS);
-      return mmask_marks[amark];
+      CGAL_assertion(this->is_reserved(amark));
+      return get_dart_mark(storage, adart, amark)!=this->get_mask_mark(amark);
     }
 
-  protected:
-    /// Mask marks to know the value of unmark dart, for each index i.
-    mutable std::bitset<NB_MARKS> mmask_marks;
-  };
+    /** Set the mark of a given dart to a state (on or off).
+     * @param adart the dart.
+     * @param amark the given mark.
+     * @param astate the state of the mark (on or off).
+     */
+    void set_mark_to(const Refs& storage,
+                     Dart_const_descriptor adart, size_type amark,
+                     bool astate) const
+    {
+      CGAL_assertion(adart!=storage.null_dart_descriptor );
+      CGAL_assertion(this->is_reserved(amark) );
 
+      if (is_marked(storage, adart, amark)!=astate)
+      {
+        if (astate) { ++this->mnb_marked_darts[amark]; }
+        else { --this->mnb_marked_darts[amark]; }
+
+        flip_dart_mark(storage, adart, amark);
+      }
+    }
+  };
+  /////////////////////////////////////////////////////////////////////////////
   template<typename Refs>
   class Mark_management_bool_vector_in_map
   {

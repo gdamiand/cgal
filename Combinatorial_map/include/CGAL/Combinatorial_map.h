@@ -126,6 +126,9 @@ namespace CGAL {
     typedef typename Base::Dart_range Dart_range;
     typedef typename Base::Dart_const_range Dart_const_range;
     using Mark_management=typename Storage_::Mark_management;
+    using Exception_no_more_available_mark=
+        typename Mark_management::Exception_no_more_available_mark;
+
 
     static const size_type NB_MARKS =Mark_management::NB_MARKS;
     static const size_type INVALID_MARK = NB_MARKS;
@@ -172,8 +175,6 @@ namespace CGAL {
       public Base::template Attribute_const_range<i>
     {};
 
-    class Exception_no_more_available_mark {};
-
   public:
     /** Default Combinatorial_map constructor.
      * The map is empty.
@@ -182,21 +183,10 @@ namespace CGAL {
     {
       static_assert(Helper::nb_attribs<=dimension+1,
                   "Too many attributes in the tuple Attributes_enabled");
+
       this->init_storage();
-
-      this->mnb_used_marks = 0;
       mmark_management.reset();
-
-      for ( size_type i = 0; i < NB_MARKS; ++i)
-      {
-        this->mfree_marks_stack[i]        = i;
-        this->mindex_marks[i]             = i;
-        this->mnb_marked_darts[i]         = 0;
-        this->mnb_times_reserved_marks[i] = 0;
-      }
-
-      this->automatic_attributes_management = true;
-
+      this->automatic_attributes_management=true;
       init_dart(null_dart_descriptor);
 
       CGAL_assertion(number_of_darts()==0);
@@ -231,24 +221,7 @@ namespace CGAL {
                       size_type mark_perforated=INVALID_MARK)
     {
       if(copy_marks)
-      {
-        // Reserve all marks of amap not yet reserved
-        for (size_type i=0; i<NB_MARKS; ++i)
-        {
-          if(!is_reserved(i) && amap.is_reserved(i))
-          {
-            CGAL_assertion(mnb_used_marks<NB_MARKS);
-            // 1) Remove mark i from mfree_marks_stack (replace it by the last free mark)
-            mfree_marks_stack[mindex_marks[i]]=mfree_marks_stack[NB_MARKS-mnb_used_marks-1];
-            mindex_marks[mfree_marks_stack[mindex_marks[i]]]=mindex_marks[i];
-            // 2) Update use mark stack
-            mused_marks_stack[mnb_used_marks]=i;
-            mindex_marks[i]=mnb_used_marks;
-            mnb_times_reserved_marks[i]=1;
-            ++mnb_used_marks;
-          }
-        }
-      }
+      { mmark_management.copy(amap.mmark_management); }
 
       // Creates a mapping between darts of the two maps (originals->copies).
       // (here we cannot use CGAL::Unique_hash_map because it does not provide
@@ -270,13 +243,9 @@ namespace CGAL {
           { mark(new_dart, mark_perforated); }
 
           if(copy_marks)
-          {
-            // Copy marks of amap
-            for(size_type i=0; i<amap.number_of_used_marks(); ++i)
-            {
-              if(amap.is_marked(it, amap.mused_marks_stack[i]))
-              { mark(new_dart, amap.mused_marks_stack[i]); }
-            }
+          { // Copy marks of it from amap to new_dart of *this
+            amap.mmark_management.copy_marks_of_dart
+                (amap, it, *this, mmark_management, new_dart);
           }
 
           (*origin_to_copy)[it]=new_dart;
@@ -546,19 +515,7 @@ namespace CGAL {
         Helper::template Foreach_enabled_attributes
           < internal::Swap_attributes_functor <Self> >::run(*this, amap);
 
-        std::swap_ranges(mnb_times_reserved_marks,
-                         mnb_times_reserved_marks+NB_MARKS,
-                         amap.mnb_times_reserved_marks);
         mmark_management.swap(amap.mmark_management);
-        std::swap(mnb_used_marks, amap.mnb_used_marks);
-        std::swap_ranges(mindex_marks,mindex_marks+NB_MARKS,
-                         amap.mindex_marks);
-        std::swap_ranges(mfree_marks_stack, mfree_marks_stack+NB_MARKS,
-                         amap.mfree_marks_stack);
-        std::swap_ranges(mused_marks_stack,mused_marks_stack+NB_MARKS,
-                         amap.mused_marks_stack);
-        std::swap_ranges(mnb_marked_darts,mnb_marked_darts+NB_MARKS,
-                         amap.mnb_marked_darts);
         std::swap(null_dart_descriptor, amap.null_dart_descriptor);
         this->mnull_dart_container.swap(amap.mnull_dart_container);
 
@@ -636,8 +593,7 @@ namespace CGAL {
     {
       this->clear_storage();
       mdarts.clear();
-      for ( size_type i = 0; i < NB_MARKS; ++i)
-        this->mnb_marked_darts[i]  = 0;
+      mmark_management.clear_darts();
 
       internal::Clear_all::run(mattribute_containers);
       this->init_storage();
@@ -675,11 +631,6 @@ namespace CGAL {
     void erase_dart(Dart_descriptor adart)
     {
       // 1) We update the number of marked darts.
-      for ( size_type i = 0; i < mnb_used_marks; ++i)
-      {
-        if (is_marked(adart, mused_marks_stack[i]))
-          --mnb_marked_darts[mused_marks_stack[i]];
-      }
       mmark_management.on_delete_dart(*this, adart);
 
       // 2) We update the attribute_ref_counting.
@@ -697,11 +648,6 @@ namespace CGAL {
     void restricted_erase_dart(Dart_descriptor adart)
     {
       // 1) We update the number of marked darts.
-      for ( size_type i = 0; i < mnb_used_marks; ++i)
-      {
-        if (is_marked(adart, mused_marks_stack[i]))
-          --mnb_marked_darts[mused_marks_stack[i]];
-      }
       mmark_management.on_delete_dart(*this, adart);
 
       // 2) We update the attribute_ref_counting.
@@ -944,7 +890,155 @@ namespace CGAL {
       return true;
     }
 
-    template <unsigned int i, unsigned int d=dimension>
+    /** Tests if a given mark is reserved.
+     *  @return true iff the mark is reserved (i.e. in used).
+     */
+    bool is_reserved(size_type amark) const
+    { return mmark_management.is_reserved(amark); }
+
+    /**  Count the number of marked darts for a given mark.
+     * @param amark the mark index.
+     * @return the number of marked darts for amark.
+     */
+    size_type number_of_marked_darts(size_type amark) const
+    { return mmark_management.number_of_marked_darts(amark); }
+
+    /**  Count the number of unmarked darts for a given mark. 
+     * @param amark the mark index.
+     * @return the number of unmarked darts for amark.
+     */
+    size_type number_of_unmarked_darts(size_type amark) const
+    { return number_of_darts()-number_of_marked_darts(amark); }
+
+    /** Tests if all the darts are unmarked for a given mark.
+     * @param amark the mark index.
+     * @return true iff all the darts are unmarked for amark.
+     */
+    bool is_whole_map_unmarked(size_type amark) const
+    { return mmark_management.number_of_marked_darts(amark)==0; }
+
+    /** Tests if all the darts are marked for a given mark.
+     * @param amark the mark index.
+     * @return true iff all the darts are marked for amark.
+     */
+    bool is_whole_map_marked(size_type amark) const
+    { return mmark_management.number_of_marked_darts(amark)==number_of_darts(); }
+
+    /** Reserve a new mark.
+     * Get a new free mark and return its index.
+     * All the darts are unmarked for this mark.
+     * @return the index of the new mark.
+     * @pre mnb_used_marks < NB_MARKS
+     */
+    size_type get_new_mark() const
+    {
+      size_type res=mmark_management.get_new_mark();
+      CGAL_assertion(is_whole_map_unmarked(res));
+      return res;
+    }
+
+     /** Increase the number of times a mark is reserved.
+     *  @param amark the mark to share.
+     */
+    void share_a_mark(size_type amark) const
+    { return mmark_management.share_a_mark(amark); }
+
+    /** @return the number of times a mark is reserved.
+     *  @param amark the mark to share.
+     */
+    size_type get_number_of_times_mark_reserved(size_type amark) const
+    { return mmark_management.get_number_of_times_mark_reserved(amark); }
+
+    /** Negate the mark of all the darts for a given mark.
+     * After this call, all the marked darts become unmarked and all the
+     * unmarked darts become marked (in constant time operation).
+     * @param amark the mark index
+     */
+    void negate_mark(size_type amark) const
+    {
+      CGAL_assertion( is_reserved(amark) );
+      mmark_management.negate_mark(amark, number_of_darts());
+    }
+
+    /** Tests if a given dart is marked for a given mark.
+     * @param adart the dart to test.
+     * @param amark the given mark.
+     * @return true iff adart is marked for the mark amark.
+     */
+    bool is_marked(Dart_const_descriptor adart, size_type amark) const
+    { return mmark_management.is_marked(*this, adart, amark); }
+
+    /** Set the mark of a given dart to a state (on or off).
+     * @param adart the dart.
+     * @param amark the given mark.
+     * @param astate the state of the mark (on or off).
+     */
+    void set_mark_to(Dart_const_descriptor adart, size_type amark,
+                     bool astate) const
+    { mmark_management.set_mark_to(*this, adart, amark, astate); }
+
+    /** Mark the given dart.
+     * @param adart the dart.
+     * @param amark the given mark.
+     */
+    void mark(Dart_const_descriptor adart, size_type amark) const
+    { mmark_management.set_mark_to(*this, adart, amark, true); }
+
+     /** Unmark the given dart.
+     * @param adart the dart.
+     * @param amark the given mark.
+     */
+    void unmark(Dart_const_descriptor adart, size_type amark) const
+    { mmark_management.set_mark_to(*this, adart, amark, false); }
+
+     /** Mark null_dart (used as a sentinel in iterators).
+     * As null dart does not belong to the set of darts, it is not counted
+     * as number of marked darts.
+     * @param amark the given mark.
+     */
+    void mark_null_dart(size_type amark) const
+    {
+      mmark_management.set_dart_mark(*this, null_dart_descriptor, amark,
+                                     !mmark_management.get_mask_mark(amark));
+    }
+
+     /** Unmark null_dart.
+     * @param amark the given mark.
+     */
+    void unmark_null_dart(size_type amark) const
+    {
+      mmark_management.set_dart_mark(*this, null_dart_descriptor, amark,
+                                     mmark_management.get_mask_mark(amark));
+    }
+
+   /** Unmark all the darts of the map for a given mark.
+     * If all the darts are marked or unmarked, this operation takes \cgalBigO{1}
+     * operations, otherwise it traverses all the darts of the map.
+     * @param amark the given mark.
+     */
+    void unmark_all(size_type amark) const
+    {
+      if(!mmark_management.unmark_all_if_possible(amark, number_of_darts()))
+      {
+        for ( typename Dart_range::const_iterator it(darts().begin()),
+               itend(darts().end()); it!=itend; ++it)
+          unmark(it, amark);
+      }
+      CGAL_assertion(is_whole_map_unmarked(amark));
+      unmark_null_dart(amark);
+    }
+
+    /** Free a given mark, calling unmark_all_darts.
+     * @param amark the given mark.
+     */
+    void free_mark(size_type amark) const
+    {
+      if(get_number_of_times_mark_reserved(amark)==1) // If the mark is not shared
+      { unmark_all(amark); }
+      mmark_management.free_mark(amark);
+    }
+
+ template <unsigned int i, unsigned int d=dimension>
     bool belong_to_same_cell(Dart_const_descriptor adart1,
                              Dart_const_descriptor adart2) const
     { return CGAL::belong_to_same_cell<Self, i, d>(*this, adart1, adart2); }
