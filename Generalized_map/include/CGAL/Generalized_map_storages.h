@@ -16,7 +16,7 @@
 #include <CGAL/Concurrent_compact_container.h>
 #include <CGAL/Dart.h>
 #include <CGAL/Handle_hash_function.h>
-#include <bitset>
+#include <CGAL/Mark_management.h>
 
 #include <boost/config.hpp>
 #if defined(BOOST_GCC)
@@ -42,6 +42,7 @@ namespace CGAL {
     using Self=Generalized_map_storage_1<d_, Items_, Alloc_>;
     using Use_index=CGAL::Tag_false;
     using Concurrent_tag=typename internal::Get_concurrent_tag<Items_>::type;
+    using Mark_management=Mark_management_bitset_on_dart<Self>;
 
     typedef internal::Combinatorial_map_helper<Self>      Helper;
 
@@ -110,7 +111,7 @@ namespace CGAL {
     inline static constexpr Null_descriptor_type null_handle=null_descriptor;
 
     /// Number of marks
-    static const size_type NB_MARKS = 32;
+    static const size_type NB_MARKS = Mark_management::NB_MARKS;
 
     /// The dimension of the generalized map.
     static const unsigned int dimension = d_;
@@ -166,40 +167,6 @@ namespace CGAL {
     }
     bool is_perforated(Dart_const_descriptor /*dh*/) const
     { return false; }
-
-    /// Set simultaneously all the marks of this dart to a given value.
-    void set_dart_marks(Dart_const_descriptor ADart,
-                        const std::bitset<NB_MARKS>& amarks) const
-    {
-      CGAL_assertion( ADart!=nullptr );
-      ADart->set_marks(amarks);
-    }
-    /// Return all the marks of a dart.
-    std::bitset<NB_MARKS> get_dart_marks(Dart_const_descriptor ADart) const
-    {
-      CGAL_assertion( ADart!=nullptr );
-      return ADart->get_marks();
-    }
-    /// Return the mark value of dart a given mark number.
-    bool get_dart_mark(Dart_const_descriptor ADart, size_type amark) const
-    {
-      CGAL_assertion( ADart!=nullptr );
-      return ADart->get_mark(amark);
-    }
-
-    /// Set the mark of a given mark number to a given value.
-    void set_dart_mark(Dart_const_descriptor ADart, size_type amark, bool avalue) const
-    {
-      CGAL_assertion( ADart!=nullptr );
-      ADart->set_mark(amark, avalue);
-    }
-
-    /// Flip the mark of a given mark number to a given value.
-    void flip_dart_mark(Dart_const_descriptor ADart, size_type amark) const
-    {
-      CGAL_assertion( ADart!=nullptr );
-      ADart->flip_mark(amark);
-    }
 
     // Access to alpha maps
     Dart_descriptor get_alpha(Dart_descriptor ADart, int B1)
