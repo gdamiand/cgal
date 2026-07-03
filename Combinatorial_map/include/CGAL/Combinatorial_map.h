@@ -129,8 +129,7 @@ namespace CGAL {
     using Exception_no_more_available_mark=
         typename Mark_management::Exception_no_more_available_mark;
 
-
-    static const size_type NB_MARKS =Mark_management::NB_MARKS;
+    static const size_type NB_MARKS = Mark_management::NB_MARKS;
     static const size_type INVALID_MARK = NB_MARKS;
 
     static const unsigned int dimension = Base::dimension;
@@ -706,7 +705,7 @@ namespace CGAL {
 
     /** Return a dart belonging to the same edge and to the second vertex
      * of the current edge (null_descriptor if such a dart does not exist).
-     * @return An descriptor to the opposite dart.
+     * @return A descriptor to the opposite dart.
      */
     Dart_descriptor opposite(Dart_descriptor dh)
     {
@@ -903,7 +902,7 @@ namespace CGAL {
     size_type number_of_marked_darts(size_type amark) const
     { return mmark_management.number_of_marked_darts(amark); }
 
-    /**  Count the number of unmarked darts for a given mark. 
+    /**  Count the number of unmarked darts for a given mark.
      * @param amark the mark index.
      * @return the number of unmarked darts for amark.
      */

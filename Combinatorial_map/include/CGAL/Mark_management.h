@@ -392,7 +392,6 @@ namespace CGAL {
                      Dart_const_descriptor adart, size_type amark,
                      bool astate) const
     {
-      CGAL_assertion(adart!=storage.null_dart_descriptor );
       CGAL_assertion(this->is_reserved(amark) );
 
       if (is_marked(storage, adart, amark)!=astate)
@@ -518,7 +517,6 @@ namespace CGAL {
                      Dart_const_descriptor adart, size_type amark,
                      bool astate) const
     {
-      CGAL_assertion(adart!=storage.null_dart_descriptor );
       CGAL_assertion(this->is_reserved(amark) );
 
       if (is_marked(storage, adart, amark)!=astate)
