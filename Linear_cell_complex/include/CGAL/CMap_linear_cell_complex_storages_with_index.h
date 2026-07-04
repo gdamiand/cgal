@@ -46,7 +46,8 @@ namespace CGAL {
                                           Items_, Alloc_>;
     using Use_index=CGAL::Tag_true;
     using Concurrent_tag=typename internal::Get_concurrent_tag<Items_>::type;
-    using Mark_management=Mark_management_bitset_on_dart_with_index<Self>;
+    using Mark_management=//Mark_management_bitset_on_dart_with_index<Self>;
+        Mark_management_bool_vector_in_map<Self>;
 
     template<typename>
     friend class Mark_management_bitset_on_dart_with_index;

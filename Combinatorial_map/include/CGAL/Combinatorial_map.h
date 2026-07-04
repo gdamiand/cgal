@@ -931,7 +931,7 @@ namespace CGAL {
      */
     size_type get_new_mark() const
     {
-      size_type res=mmark_management.get_new_mark();
+      size_type res=mmark_management.get_new_mark(number_of_darts());
       CGAL_assertion(is_whole_map_unmarked(res));
       return res;
     }
