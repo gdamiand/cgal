@@ -525,7 +525,7 @@ namespace CGAL {
     using Base::NB_MARKS;
 
     /// on_new_dart is called when a new dart is created.
-    void on_new_dart(const Refs& storage, Dart_descriptor ADart)
+    void on_new_dart(const Refs& /* storage */, Dart_descriptor ADart)
     {
       // We update the number of marked darts.
       for (size_type i=0; i<this->mnb_used_marks; ++i)
@@ -561,8 +561,10 @@ namespace CGAL {
     size_type get_new_mark(std::size_t nb_darts) const
     {
       size_type amark=Base::get_new_mark(nb_darts);
-      if(marray_of_marks[amark].size()!=nb_darts+1)
+      //if(marray_of_marks[amark].size()!=nb_darts+1)
       { marray_of_marks[amark].resize(nb_darts+1, this->mmask_marks[amark]); }
+      marray_of_marks[amark].assign(marray_of_marks[amark].size(),
+                                    this->get_mask_mark(amark));
       return amark;
     }
 
@@ -633,12 +635,13 @@ namespace CGAL {
      */
     bool unmark_all_if_possible(size_type amark, std::size_t nb_darts) const
     {
-      if(!Base::unmark_all_if_possible(amark, nb_darts))
+      this->mnb_marked_darts[amark]=0;
+      /*if(!Base::unmark_all_if_possible(amark, nb_darts))
       {
         marray_of_marks[amark].assign(marray_of_marks[amark].size(),
                                       this->get_mask_mark(amark));
         this->mnb_marked_darts[amark]=0;
-      }
+      }*/
       return true;
     }
 
