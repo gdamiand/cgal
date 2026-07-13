@@ -505,8 +505,7 @@ namespace CGAL {
     ~CMap_non_basic_iterator() noexcept(!CGAL_ASSERTIONS_ENABLED)
     {
       CGAL_destructor_assertion( this->mmark_number!=Map::INVALID_MARK );
-      if (this->mmap->get_number_of_times_mark_reserved
-          (this->mmark_number)==1)
+      if (this->mmap->get_number_of_times_mark_used(this->mmark_number)==1)
         unmark_treated_darts();
       this->mmap->free_mark(this->mmark_number);
       this->mmark_number = Map::INVALID_MARK; // To avoid basic class to try to unmark darts.
@@ -522,7 +521,7 @@ namespace CGAL {
     {
       if (this != &aiterator)
       {
-        if (this->mmap->get_number_of_times_mark_reserved
+        if (this->mmap->get_number_of_times_mark_used
             (this->mmark_number)==1)
           unmark_treated_darts();
         this->mmap->free_mark(this->mmark_number);

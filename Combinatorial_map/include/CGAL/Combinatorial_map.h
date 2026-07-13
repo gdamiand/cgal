@@ -889,11 +889,11 @@ namespace CGAL {
       return true;
     }
 
-    /** Tests if a given mark is reserved.
-     *  @return true iff the mark is reserved (i.e. in used).
+    /** Tests if a given mark is used.
+     *  @return true iff the mark is used.
      */
-    bool is_reserved(size_type amark) const
-    { return mmark_management.is_reserved(amark); }
+    bool is_used(size_type amark) const
+    { return mmark_management.is_used(amark); }
 
     /**  Count the number of marked darts for a given mark.
      * @param amark the mark index.
@@ -945,8 +945,8 @@ namespace CGAL {
     /** @return the number of times a mark is reserved.
      *  @param amark the mark to share.
      */
-    size_type get_number_of_times_mark_reserved(size_type amark) const
-    { return mmark_management.get_number_of_times_mark_reserved(amark); }
+    size_type get_number_of_times_mark_used(size_type amark) const
+    { return mmark_management.get_number_of_times_mark_used(amark); }
 
     /** Negate the mark of all the darts for a given mark.
      * After this call, all the marked darts become unmarked and all the
@@ -954,10 +954,7 @@ namespace CGAL {
      * @param amark the mark index
      */
     void negate_mark(size_type amark) const
-    {
-      CGAL_assertion( is_reserved(amark) );
-      mmark_management.negate_mark(amark, number_of_darts());
-    }
+    { mmark_management.negate_mark(amark, number_of_darts()); }
 
     /** Tests if a given dart is marked for a given mark.
      * @param adart the dart to test.
@@ -1032,7 +1029,7 @@ namespace CGAL {
      */
     void free_mark(size_type amark) const
     {
-      if(get_number_of_times_mark_reserved(amark)==1) // If the mark is not shared
+      if(get_number_of_times_mark_used(amark)==1) // If the mark is not shared
       { unmark_all(amark); }
       mmark_management.free_mark(amark);
     }

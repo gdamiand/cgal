@@ -93,7 +93,7 @@ namespace CGAL {
     /// Destructor.
     ~CMap_cell_iterator()
     {
-      if (this->mmap->get_number_of_times_mark_reserved(mcell_mark_number)==1)
+      if (this->mmap->get_number_of_times_mark_used(mcell_mark_number)==1)
         unmark_treated_darts();
       this->mmap->free_mark(mcell_mark_number);
       this->mmap->free_mark(this->mmark_number);
@@ -208,7 +208,7 @@ namespace CGAL {
     /// Destructor.
     ~CMap_cell_iterator()
     {
-      if (this->mmap->get_number_of_times_mark_reserved(mmark_number)==1)
+      if (this->mmap->get_number_of_times_mark_used(mmark_number)==1)
         unmark_treated_darts();
       this->mmap->free_mark(mmark_number);
       this->mmark_number = Map::INVALID_MARK; // To avoid basic class to try to unmark darts.
@@ -326,7 +326,7 @@ namespace CGAL {
     /// Destructor.
     ~CMap_cell_iterator()
     {
-      if (this->mmap->get_number_of_times_mark_reserved(mmark_number)==1)
+      if (this->mmap->get_number_of_times_mark_used(mmark_number)==1)
         unmark_treated_darts();
       this->mmap->free_mark(mmark_number);
       this->mmark_number = Map::INVALID_MARK; // To avoid basic class to try to unmark darts.
